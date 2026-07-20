@@ -13,8 +13,13 @@ import {
   View,
 } from 'react-native';
 
-import {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {RootStackParamList} from '../../navigation/types';
+import {
+  NativeStackScreenProps,
+} from '@react-navigation/native-stack';
+
+import {
+  RootStackParamList,
+} from '../../navigation/types';
 
 type Props = NativeStackScreenProps<
   RootStackParamList,
@@ -25,110 +30,280 @@ const CheckoutAddressScreen = ({
   navigation,
   route,
 }: Props) => {
-  const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState('');
+  const [fullName, setFullName] =
+    useState('');
 
-  const [house, setHouse] = useState('');
-  const [area, setArea] = useState('');
-  const [landmark, setLandmark] = useState('');
+  const [phone, setPhone] =
+    useState('');
 
-  const [city, setCity] = useState('');
-  const [pincode, setPincode] = useState('');
+  const [house, setHouse] =
+    useState('');
 
-  const [error, setError] = useState('');
+  const [area, setArea] =
+    useState('');
 
-  const validateAddress = () => {
-  if (
-    !fullName.trim() ||
-    !phone.trim() ||
-    !house.trim() ||
-    !area.trim() ||
-    !city.trim() ||
-    !pincode.trim()
-  ) {
-    setError(
-      'Please fill in all required fields.',
-    );
+  const [landmark, setLandmark] =
+    useState('');
 
-    return;
-  }
+  const [city, setCity] =
+    useState('');
 
-  if (!/^[0-9]{10}$/.test(phone)) {
-    setError(
-      'Please enter a valid 10-digit mobile number.',
-    );
+  const [pincode, setPincode] =
+    useState('');
 
-    return;
-  }
+  const [error, setError] =
+    useState('');
 
-  if (!/^[0-9]{6}$/.test(pincode)) {
-    setError(
-      'Please enter a valid 6-digit PIN code.',
-    );
+  const [
+    phoneError,
+    setPhoneError,
+  ] = useState('');
 
-    return;
-  }
+  const [
+    pincodeError,
+    setPincodeError,
+  ] = useState('');
 
-  setError('');
+  /*
+   * Validate mobile number while typing.
+   *
+   * Indian mobile numbers:
+   * - Exactly 10 digits
+   * - Start with 6, 7, 8, or 9
+   */
+  const handlePhoneChange = (
+    text: string,
+  ) => {
+    const value = text
+      .replace(/[^0-9]/g, '')
+      .slice(0, 10);
 
-  const address = {
-    fullName,
-    phone,
-    house,
-    area,
-    landmark,
-    city,
-    pincode,
+    setPhone(value);
+    setError('');
+
+    if (value.length === 0) {
+      setPhoneError('');
+      return;
+    }
+
+    if (value.length < 10) {
+      setPhoneError(
+        'Enter a valid 10-digit mobile number.',
+      );
+
+      return;
+    }
+
+    if (!/^[6-9][0-9]{9}$/.test(value)) {
+      setPhoneError(
+        'Enter a valid Indian mobile number.',
+      );
+
+      return;
+    }
+
+    setPhoneError('');
   };
 
-  // BUY ONCE
-  if (
-    route.params.orderType === 'buyOnce' &&
-    route.params.deliveryOption
-  ) {
-    navigation.navigate('OrderReview', {
-      orderType: 'buyOnce',
-      productId: route.params.productId,
-      quantity: route.params.quantity,
-      deliveryOption:
-        route.params.deliveryOption,
-      address,
-    });
+  /*
+   * Validate PIN code while typing.
+   */
+  const handlePincodeChange = (
+    text: string,
+  ) => {
+    const value = text
+      .replace(/[^0-9]/g, '')
+      .slice(0, 6);
 
-    return;
-  }
+    setPincode(value);
+    setError('');
 
-  // SUBSCRIPTION
-  if (
-    route.params.orderType ===
-      'subscription' &&
-    route.params.schedule &&
-    route.params.startOption
-  ) {
-    navigation.navigate(
-      'SubscriptionReview',
-      {
-        orderType: 'subscription',
-        productId:
-          route.params.productId,
-        quantity:
-          route.params.quantity,
-        schedule:
-          route.params.schedule,
-        selectedDays:
-          route.params.selectedDays ?? [],
-        startOption:
-          route.params.startOption,
-        address,
-      },
-    );
+    if (value.length === 0) {
+      setPincodeError('');
+      return;
+    }
 
-    return;
-  }
-};
+    if (value.length < 6) {
+      setPincodeError(
+        'Enter a valid 6-digit PIN code.',
+      );
+
+      return;
+    }
+
+    if (!/^[0-9]{6}$/.test(value)) {
+      setPincodeError(
+        'Enter a valid 6-digit PIN code.',
+      );
+
+      return;
+    }
+
+    setPincodeError('');
+  };
+
+  const validateAddress = () => {
+    /*
+     * Required field validation
+     */
+    if (
+      !fullName.trim() ||
+      !phone.trim() ||
+      !house.trim() ||
+      !area.trim() ||
+      !city.trim() ||
+      !pincode.trim()
+    ) {
+      setError(
+        'Please fill in all required fields.',
+      );
+
+      /*
+       * Also show inline validation
+       * if phone/PIN are incomplete.
+       */
+      if (
+        phone.length > 0 &&
+        !/^[6-9][0-9]{9}$/.test(phone)
+      ) {
+        setPhoneError(
+          'Enter a valid 10-digit mobile number.',
+        );
+      }
+
+      if (
+        pincode.length > 0 &&
+        !/^[0-9]{6}$/.test(pincode)
+      ) {
+        setPincodeError(
+          'Enter a valid 6-digit PIN code.',
+        );
+      }
+
+      return;
+    }
+
+    /*
+     * Final phone validation
+     */
+    if (
+      !/^[6-9][0-9]{9}$/.test(phone)
+    ) {
+      setPhoneError(
+        'Enter a valid 10-digit mobile number.',
+      );
+
+      setError(
+        'Please correct the highlighted fields.',
+      );
+
+      return;
+    }
+
+    /*
+     * Final PIN validation
+     */
+    if (
+      !/^[0-9]{6}$/.test(pincode)
+    ) {
+      setPincodeError(
+        'Enter a valid 6-digit PIN code.',
+      );
+
+      setError(
+        'Please correct the highlighted fields.',
+      );
+
+      return;
+    }
+
+    setPhoneError('');
+    setPincodeError('');
+    setError('');
+
+    const address = {
+      fullName: fullName.trim(),
+      phone,
+      house: house.trim(),
+      area: area.trim(),
+      landmark: landmark.trim(),
+      city: city.trim(),
+      pincode,
+    };
+
+    /*
+     * BUY ONCE
+     */
+    if (
+      route.params.orderType ===
+        'buyOnce' &&
+      route.params.deliveryOption
+    ) {
+      navigation.navigate(
+        'OrderReview',
+        {
+          orderType: 'buyOnce',
+
+          productId:
+            route.params.productId,
+
+          quantity:
+            route.params.quantity,
+
+          deliveryOption:
+            route.params
+              .deliveryOption,
+
+          address,
+        },
+      );
+
+      return;
+    }
+
+    /*
+     * SUBSCRIPTION
+     */
+    if (
+      route.params.orderType ===
+        'subscription' &&
+      route.params.schedule &&
+      route.params.startOption
+    ) {
+      navigation.navigate(
+        'SubscriptionReview',
+        {
+          orderType:
+            'subscription',
+
+          productId:
+            route.params.productId,
+
+          quantity:
+            route.params.quantity,
+
+          schedule:
+            route.params.schedule,
+
+          selectedDays:
+            route.params
+              .selectedDays ?? [],
+
+          startOption:
+            route.params.startOption,
+
+          address,
+        },
+      );
+
+      return;
+    }
+  };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      style={styles.container}>
+
       <StatusBar
         barStyle="dark-content"
         backgroundColor="#F8FBF9"
@@ -143,15 +318,22 @@ const CheckoutAddressScreen = ({
         }>
 
         <ScrollView
-          contentContainerStyle={styles.content}
+          contentContainerStyle={
+            styles.content
+          }
           keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}>
+          showsVerticalScrollIndicator={
+            false
+          }>
 
           <Pressable
             style={styles.backButton}
-            onPress={() => navigation.goBack()}>
+            onPress={() =>
+              navigation.goBack()
+            }>
 
-            <Text style={styles.backText}>
+            <Text
+              style={styles.backText}>
               ‹
             </Text>
 
@@ -165,32 +347,49 @@ const CheckoutAddressScreen = ({
             Delivery address
           </Text>
 
-          <Text style={styles.subtitle}>
-            Enter the address where you'd like
-            your fresh milk delivered every morning.
+          <Text
+            style={styles.subtitle}>
+            Enter the address where you'd
+            like your fresh milk delivered
+            every morning.
           </Text>
 
           <View style={styles.infoBox}>
-            <Text style={styles.infoIcon}>
+
+            <Text
+              style={styles.infoIcon}>
               🌅
             </Text>
 
-            <View style={styles.infoContent}>
+            <View
+              style={
+                styles.infoContent
+              }>
 
-              <Text style={styles.infoTitle}>
+              <Text
+                style={
+                  styles.infoTitle
+                }>
                 Morning delivery
               </Text>
 
-              <Text style={styles.infoText}>
-                Please provide an address where
-                morning delivery can be received
-                reliably.
+              <Text
+                style={
+                  styles.infoText
+                }>
+                Please provide an address
+                where morning delivery can
+                be received reliably.
               </Text>
 
             </View>
+
           </View>
 
-          <Text style={styles.sectionTitle}>
+          <Text
+            style={
+              styles.sectionTitle
+            }>
             Contact details
           </Text>
 
@@ -201,7 +400,10 @@ const CheckoutAddressScreen = ({
           <TextInput
             style={styles.input}
             value={fullName}
-            onChangeText={setFullName}
+            onChangeText={text => {
+              setFullName(text);
+              setError('');
+            }}
             placeholder="Enter your full name"
             placeholderTextColor="#A2AAA5"
           />
@@ -210,33 +412,56 @@ const CheckoutAddressScreen = ({
             Mobile number *
           </Text>
 
-          <View style={styles.phoneContainer}>
+          <View
+            style={[
+              styles.phoneContainer,
 
-            <View style={styles.countryCode}>
-              <Text style={styles.countryCodeText}>
+              phoneError
+                ? styles.invalidField
+                : null,
+            ]}>
+
+            <View
+              style={
+                styles.countryCode
+              }>
+
+              <Text
+                style={
+                  styles.countryCodeText
+                }>
                 +91
               </Text>
+
             </View>
 
             <TextInput
               style={styles.phoneInput}
               value={phone}
-              onChangeText={text =>
-                setPhone(
-                  text
-                    .replace(/[^0-9]/g, '')
-                    .slice(0, 10),
-                )
+              onChangeText={
+                handlePhoneChange
               }
               placeholder="10-digit mobile number"
               placeholderTextColor="#A2AAA5"
-              keyboardType="phone-pad"
+              keyboardType="number-pad"
               maxLength={10}
             />
 
           </View>
 
-          <Text style={styles.sectionTitle}>
+          {phoneError !== '' && (
+            <Text
+              style={
+                styles.inlineError
+              }>
+              {phoneError}
+            </Text>
+          )}
+
+          <Text
+            style={
+              styles.sectionTitle
+            }>
             Address
           </Text>
 
@@ -247,7 +472,10 @@ const CheckoutAddressScreen = ({
           <TextInput
             style={styles.input}
             value={house}
-            onChangeText={setHouse}
+            onChangeText={text => {
+              setHouse(text);
+              setError('');
+            }}
             placeholder="House no., flat or building"
             placeholderTextColor="#A2AAA5"
           />
@@ -259,7 +487,10 @@ const CheckoutAddressScreen = ({
           <TextInput
             style={styles.input}
             value={area}
-            onChangeText={setArea}
+            onChangeText={text => {
+              setArea(text);
+              setError('');
+            }}
             placeholder="Area, street or locality"
             placeholderTextColor="#A2AAA5"
           />
@@ -278,52 +509,61 @@ const CheckoutAddressScreen = ({
 
           <View style={styles.row}>
 
-            <View style={styles.halfField}>
+  <View style={styles.halfField}>
+    <Text style={styles.label}>
+      City *
+    </Text>
 
-              <Text style={styles.label}>
-                City *
-              </Text>
+    <TextInput
+      style={styles.input}
+      value={city}
+      onChangeText={text => {
+        setCity(text);
+        setError('');
+      }}
+      placeholder="City"
+      placeholderTextColor="#A2AAA5"
+    />
+  </View>
 
-              <TextInput
-                style={styles.input}
-                value={city}
-                onChangeText={setCity}
-                placeholder="City"
-                placeholderTextColor="#A2AAA5"
-              />
+  <View style={styles.halfField}>
+    <Text style={styles.label}>
+      PIN code *
+    </Text>
 
-            </View>
+    <TextInput
+      style={[
+        styles.input,
+        pincodeError
+          ? styles.invalidField
+          : null,
+      ]}
+      value={pincode}
+      onChangeText={handlePincodeChange}
+      placeholder="6 digits"
+      placeholderTextColor="#A2AAA5"
+      keyboardType="number-pad"
+      maxLength={6}
+    />
+  </View>
 
-            <View style={styles.halfField}>
+</View>
 
-              <Text style={styles.label}>
-                PIN code *
-              </Text>
-
-              <TextInput
-                style={styles.input}
-                value={pincode}
-                onChangeText={text =>
-                  setPincode(
-                    text
-                      .replace(/[^0-9]/g, '')
-                      .slice(0, 6),
-                  )
-                }
-                placeholder="6 digits"
-                placeholderTextColor="#A2AAA5"
-                keyboardType="number-pad"
-                maxLength={6}
-              />
-
-            </View>
-
-          </View>
-
+{pincodeError !== '' && (
+  <Text style={styles.inlineError}>
+    {pincodeError}
+  </Text>
+)}
           {error !== '' && (
-            <View style={styles.errorBox}>
+            <View
+              style={
+                styles.errorBox
+              }>
 
-              <Text style={styles.errorText}>
+              <Text
+                style={
+                  styles.errorText
+                }>
                 {error}
               </Text>
 
@@ -331,23 +571,35 @@ const CheckoutAddressScreen = ({
           )}
 
           <Pressable
-            style={styles.continueButton}
-            onPress={validateAddress}>
+            style={
+              styles.continueButton
+            }
+            onPress={
+              validateAddress
+            }>
 
-            <Text style={styles.continueText}>
+            <Text
+              style={
+                styles.continueText
+              }>
               Continue to Review
             </Text>
 
           </Pressable>
 
-          <Text style={styles.securityText}>
-            🔒 Your delivery information is used
-            only to fulfil your orders.
+          <Text
+            style={
+              styles.securityText
+            }>
+            🔒 Your delivery information
+            is used only to fulfil your
+            orders.
           </Text>
 
         </ScrollView>
 
       </KeyboardAvoidingView>
+
     </SafeAreaView>
   );
 };
@@ -468,8 +720,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#DDE5E0',
     borderRadius: 11,
-    marginBottom: 17,
+    marginBottom: 4,
     overflow: 'hidden',
+  },
+
+  invalidField: {
+    borderColor: '#D94A4A',
+    borderWidth: 1.5,
   },
 
   countryCode: {
@@ -493,6 +750,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 
+inlineError: {
+  color: '#D94A4A',
+  fontSize: 11,
+  marginTop: 4,
+  marginBottom: 12,
+  minHeight: 16,
+},
+
   row: {
     flexDirection: 'row',
     gap: 12,
@@ -506,7 +771,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF0EE',
     borderRadius: 10,
     padding: 12,
-    marginTop: 3,
+    marginTop: 8,
   },
 
   errorText: {

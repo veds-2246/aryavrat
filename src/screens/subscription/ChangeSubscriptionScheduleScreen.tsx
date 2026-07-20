@@ -240,53 +240,6 @@ const ChangeSubscriptionScheduleScreen = ({
 
         </Pressable>
 
-        <Pressable
-          style={[
-            styles.optionCard,
-            selectedSchedule ===
-              'alternate' &&
-              styles.selectedCard,
-          ]}
-          onPress={() =>
-            selectSchedule('alternate')
-          }>
-
-          <View style={styles.optionContent}>
-
-            <View
-              style={[
-                styles.radioOuter,
-                selectedSchedule ===
-                  'alternate' &&
-                  styles.selectedRadioOuter,
-              ]}>
-
-              {selectedSchedule ===
-                'alternate' && (
-                <View
-                  style={
-                    styles.radioInner
-                  }
-                />
-              )}
-
-            </View>
-
-            <View style={styles.optionText}>
-
-              <Text style={styles.optionTitle}>
-                Alternate Days
-              </Text>
-
-              <Text style={styles.optionDescription}>
-                Milk delivered every other day.
-              </Text>
-
-            </View>
-
-          </View>
-
-        </Pressable>
 
         <Pressable
           style={[

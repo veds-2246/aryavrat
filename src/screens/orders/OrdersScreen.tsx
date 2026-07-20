@@ -37,20 +37,19 @@ const OrdersScreen = () => {
   };
 
   const formatSchedule = (order: AppOrder) => {
-    if (order.schedule === 'daily') {
-      return 'Daily';
-    }
+  if (order.schedule === 'daily') {
+    return 'Daily';
+  }
 
-    if (order.schedule === 'alternate') {
-      return 'Alternate Days';
-    }
+  if (order.schedule === 'custom') {
+    return (
+      order.selectedDays?.join(', ') ||
+      'Custom Days'
+    );
+  }
 
-    if (order.schedule === 'custom') {
-      return order.selectedDays?.join(', ') || 'Custom Days';
-    }
-
-    return 'Not set';
-  };
+  return 'Not set';
+};
 
   const isOrderCancelled = (order: AppOrder) => {
     if (order.status === 'cancelled') {

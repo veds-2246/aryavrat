@@ -216,7 +216,7 @@ const ProductDetailsScreen = ({navigation}: Props) => {
             </Text>
 
             <Text style={styles.scheduleText}>
-              Daily • Alternate days • Custom
+              Daily • Custom
             </Text>
           </View>
 

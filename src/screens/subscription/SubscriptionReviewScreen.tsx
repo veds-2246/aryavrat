@@ -89,16 +89,12 @@ const SubscriptionReviewScreen = ({
   };
 
   const formatSchedule = () => {
-    if (schedule === 'daily') {
-      return 'Every day';
-    }
+  if (schedule === 'daily') {
+    return 'Every day';
+  }
 
-    if (schedule === 'alternate') {
-      return 'Every alternate day';
-    }
-
-    return 'Custom days';
-  };
+  return 'Custom days';
+};
 
   const getStartDate = () => {
     const date = new Date();
@@ -123,16 +119,12 @@ const SubscriptionReviewScreen = ({
   };
 
   const getEstimatedDeliveries = () => {
-    if (schedule === 'daily') {
-      return 30;
-    }
+  if (schedule === 'daily') {
+    return 30;
+  }
 
-    if (schedule === 'alternate') {
-      return 15;
-    }
-
-    return selectedDays.length * 4;
-  };
+  return selectedDays.length * 4;
+};
 
   const estimatedDeliveries =
     getEstimatedDeliveries();

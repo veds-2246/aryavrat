@@ -9,7 +9,6 @@ export type OrderStatus =
 
 export type SubscriptionSchedule =
   | 'daily'
-  | 'alternate'
   | 'custom';
 
 export type SubscriptionStatus =

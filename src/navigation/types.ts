@@ -30,7 +30,6 @@ export type RootStackParamList = {
   quantity: number;
   schedule:
     | 'daily'
-    | 'alternate'
     | 'custom';
   selectedDays: string[];
   };
@@ -42,7 +41,6 @@ export type RootStackParamList = {
 
   schedule:
     | 'daily'
-    | 'alternate'
     | 'custom';
 
   selectedDays: string[];
@@ -69,7 +67,6 @@ export type RootStackParamList = {
 
   schedule?:
     | 'daily'
-    | 'alternate'
     | 'custom';
 
   selectedDays?: string[];

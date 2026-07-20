@@ -20,7 +20,6 @@ type Props = NativeStackScreenProps<
 
 type ScheduleType =
   | 'daily'
-  | 'alternate'
   | 'custom';
 
 const DAYS = [
@@ -186,43 +185,6 @@ const SubscriptionSetupScreen = ({
 
             <Text style={styles.example}>
               Mon • Tue • Wed • Thu • Fri • Sat • Sun
-            </Text>
-          </View>
-        </Pressable>
-
-        <Pressable
-          style={[
-            styles.scheduleCard,
-            schedule === 'alternate' &&
-              styles.selectedCard,
-          ]}
-          onPress={() =>
-            setSchedule('alternate')
-          }>
-
-          <View
-            style={[
-              styles.radio,
-              schedule === 'alternate' &&
-                styles.radioSelected,
-            ]}>
-
-            {schedule === 'alternate' && (
-              <View style={styles.radioDot} />
-            )}
-          </View>
-
-          <View style={styles.scheduleContent}>
-            <Text style={styles.scheduleTitle}>
-              Alternate Days
-            </Text>
-
-            <Text style={styles.scheduleDescription}>
-              Milk delivered every other day.
-            </Text>
-
-            <Text style={styles.example}>
-              Example: Mon • Wed • Fri • Sun • Tue...
             </Text>
           </View>
         </Pressable>

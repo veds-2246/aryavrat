@@ -101,27 +101,19 @@ const ManageSubscriptionScreen = ({
   };
 
   const formatSchedule = () => {
-    if (
-      subscription.schedule ===
-      'daily'
-    ) {
-      return 'Daily';
-    }
+  if (
+    subscription.schedule ===
+    'daily'
+  ) {
+    return 'Daily';
+  }
 
-    if (
-      subscription.schedule ===
-      'alternate'
-    ) {
-      return 'Alternate Days';
-    }
-
-    return (
-      subscription.selectedDays?.join(
-        ', ',
-      ) || 'Custom Days'
-    );
-  };
-
+  return (
+    subscription.selectedDays?.join(
+      ', ',
+    ) || 'Custom Days'
+  );
+};
   const calculatePrice = () => {
     /*
      * Current project price:

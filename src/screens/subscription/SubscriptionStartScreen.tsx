@@ -47,16 +47,12 @@ const SubscriptionStartScreen = ({
   };
 
   const formatSchedule = () => {
-    if (schedule === 'daily') {
-      return 'Daily';
-    }
+  if (schedule === 'daily') {
+    return 'Daily';
+  }
 
-    if (schedule === 'alternate') {
-      return 'Alternate Days';
-    }
-
-    return 'Custom Days';
-  };
+  return 'Custom Days';
+};
 
   const getDate = (
     daysToAdd: number,
@@ -298,33 +294,6 @@ const SubscriptionStartScreen = ({
           </View>
 
         </Pressable>
-
-        {schedule === 'alternate' && (
-
-          <View style={styles.infoBox}>
-
-            <Text style={styles.infoIcon}>
-              🔄
-            </Text>
-
-            <View style={styles.infoContent}>
-
-              <Text style={styles.infoTitle}>
-                Alternate-day schedule
-              </Text>
-
-              <Text style={styles.infoText}>
-                Your selected first delivery
-                becomes the starting point.
-                Deliveries will then continue
-                every other day.
-              </Text>
-
-            </View>
-
-          </View>
-
-        )}
 
         {schedule === 'custom' && (
 

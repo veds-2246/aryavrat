@@ -15,8 +15,13 @@ import {
   View,
 } from 'react-native';
 
-import {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {RootStackParamList} from '../../navigation/types';
+import {
+  NativeStackScreenProps,
+} from '@react-navigation/native-stack';
+
+import {
+  RootStackParamList,
+} from '../../navigation/types';
 
 type Props = NativeStackScreenProps<
   RootStackParamList,
@@ -36,18 +41,27 @@ const OtpScreen = ({
     '',
   ]);
 
-  const [seconds, setSeconds] = useState(30);
-  const [error, setError] = useState('');
+  const [seconds, setSeconds] =
+    useState(30);
+
+  const [error, setError] =
+    useState('');
+
+  const [isVerifying, setIsVerifying] =
+    useState(false);
 
   const inputs =
     useRef<Array<TextInput | null>>([]);
 
+  /*
+   * Resend OTP countdown
+   */
   useEffect(() => {
     if (seconds <= 0) {
       return;
     }
 
-    const timer = setInterval(() => {
+    const timer = setTimeout(() => {
       setSeconds(previous =>
         previous > 0
           ? previous - 1
@@ -55,15 +69,61 @@ const OtpScreen = ({
       );
     }, 1000);
 
-    return () => clearInterval(timer);
+    return () => {
+      clearTimeout(timer);
+    };
   }, [seconds]);
 
+  /*
+   * Verify OTP
+   */
+  const verifyOtp = (
+    enteredOtp: string,
+  ) => {
+    setIsVerifying(true);
+    setError('');
+
+    /*
+     * Small delay to simulate
+     * real server verification.
+     */
+    setTimeout(() => {
+      if (enteredOtp === '1234') {
+        navigation.reset({
+          index: 0,
+          routes: [
+            {
+              name: 'Home',
+            },
+          ],
+        });
+
+        return;
+      }
+
+      setIsVerifying(false);
+
+      setError(
+        'Incorrect OTP. Please try again.',
+      );
+    }, 400);
+  };
+
+  /*
+   * Handle OTP digit input
+   */
   const handleChange = (
     value: string,
     index: number,
   ) => {
+    if (isVerifying) {
+      return;
+    }
+
     const digit =
-      value.replace(/[^0-9]/g, '').slice(-1);
+      value
+        .replace(/[^0-9]/g, '')
+        .slice(-1);
 
     const updatedOtp = [...otp];
 
@@ -72,58 +132,84 @@ const OtpScreen = ({
     setOtp(updatedOtp);
     setError('');
 
-    if (digit && index < 3) {
-      inputs.current[index + 1]?.focus();
+    /*
+     * Move automatically
+     * to next OTP box.
+     */
+    if (
+      digit &&
+      index < 3
+    ) {
+      inputs.current[
+        index + 1
+      ]?.focus();
+    }
+
+    /*
+     * Auto verify immediately
+     * when all 4 digits exist.
+     *
+     * We use updatedOtp here
+     * because React state updates
+     * are asynchronous.
+     */
+    const enteredOtp =
+      updatedOtp.join('');
+
+    if (
+      enteredOtp.length === 4
+    ) {
+      verifyOtp(enteredOtp);
     }
   };
 
+  /*
+   * Handle backspace navigation
+   */
   const handleKeyPress = (
     key: string,
     index: number,
   ) => {
+    if (isVerifying) {
+      return;
+    }
+
     if (
       key === 'Backspace' &&
       !otp[index] &&
       index > 0
     ) {
-      inputs.current[index - 1]?.focus();
+      inputs.current[
+        index - 1
+      ]?.focus();
     }
   };
 
-  const handleVerify = () => {
-    const enteredOtp = otp.join('');
-
-    if (enteredOtp.length !== 4) {
-      setError(
-        'Please enter the complete 4-digit OTP.',
-      );
-      return;
-    }
-
-    // Temporary mock OTP for development.
-    if (enteredOtp !== '1234') {
-      setError(
-        'Incorrect OTP. Use 1234 for testing.',
-      );
-      return;
-    }
-
-    navigation.reset({
-      index: 0,
-      routes: [{name: 'Home'}],
-    });
-  };
-
+  /*
+   * Resend OTP
+   */
   const handleResend = () => {
-    if (seconds > 0) {
+    if (
+      seconds > 0 ||
+      isVerifying
+    ) {
       return;
     }
 
-    setOtp(['', '', '', '']);
+    setOtp([
+      '',
+      '',
+      '',
+      '',
+    ]);
+
     setError('');
+    setIsVerifying(false);
     setSeconds(30);
 
-    inputs.current[0]?.focus();
+    setTimeout(() => {
+      inputs.current[0]?.focus();
+    }, 100);
   };
 
   return (
@@ -144,7 +230,10 @@ const OtpScreen = ({
 
         <Pressable
           style={styles.backButton}
-          onPress={() => navigation.goBack()}>
+          disabled={isVerifying}
+          onPress={() =>
+            navigation.goBack()
+          }>
 
           <Text style={styles.backText}>
             ‹
@@ -169,46 +258,100 @@ const OtpScreen = ({
         </Text>
 
         <Pressable
-          onPress={() => navigation.goBack()}>
+          disabled={isVerifying}
+          onPress={() =>
+            navigation.goBack()
+          }>
 
-          <Text style={styles.changeNumber}>
+          <Text
+            style={
+              styles.changeNumber
+            }>
             Change mobile number
           </Text>
 
         </Pressable>
 
-        <View style={styles.otpContainer}>
+        <View
+          style={
+            styles.otpContainer
+          }>
 
-          {otp.map((digit, index) => (
-            <TextInput
-              key={index}
-              ref={ref => {
-                inputs.current[index] = ref;
-              }}
-              style={[
-                styles.otpInput,
-                error
-                  ? styles.otpInputError
-                  : null,
-              ]}
-              value={digit}
-              keyboardType="number-pad"
-              maxLength={1}
-              textAlign="center"
-              autoFocus={index === 0}
-              onChangeText={value =>
-                handleChange(value, index)
-              }
-              onKeyPress={({nativeEvent}) =>
-                handleKeyPress(
-                  nativeEvent.key,
-                  index,
-                )
-              }
-            />
-          ))}
+          {otp.map(
+            (digit, index) => (
+              <TextInput
+                key={index}
+
+                ref={ref => {
+                  inputs.current[
+                    index
+                  ] = ref;
+                }}
+
+                style={[
+                  styles.otpInput,
+
+                  error
+                    ? styles.otpInputError
+                    : null,
+
+                  isVerifying
+                    ? styles.otpInputVerifying
+                    : null,
+                ]}
+
+                value={digit}
+
+                keyboardType="number-pad"
+
+                maxLength={1}
+
+                textAlign="center"
+
+                autoFocus={
+                  index === 0
+                }
+
+                editable={
+                  !isVerifying
+                }
+
+                onChangeText={value =>
+                  handleChange(
+                    value,
+                    index,
+                  )
+                }
+
+                onKeyPress={({
+                  nativeEvent,
+                }) =>
+                  handleKeyPress(
+                    nativeEvent.key,
+                    index,
+                  )
+                }
+              />
+            ),
+          )}
 
         </View>
+
+        {isVerifying ? (
+          <View
+            style={
+              styles.statusContainer
+            }>
+
+            <Text
+              style={
+                styles.verifyingText
+              }>
+              Verifying OTP...
+            </Text>
+
+          </View>
+        ) : null}
 
         {error ? (
           <Text style={styles.error}>
@@ -216,33 +359,31 @@ const OtpScreen = ({
           </Text>
         ) : null}
 
-        <Pressable
-          style={({pressed}) => [
-            styles.verifyButton,
-            pressed && styles.buttonPressed,
-          ]}
-          onPress={handleVerify}>
+        <View
+          style={
+            styles.resendContainer
+          }>
 
-          <Text style={styles.verifyText}>
-            Verify & Continue
-          </Text>
-
-        </Pressable>
-
-        <View style={styles.resendContainer}>
-
-          <Text style={styles.resendLabel}>
+          <Text
+            style={
+              styles.resendLabel
+            }>
             Didn't receive the code?{' '}
           </Text>
 
           <Pressable
-            disabled={seconds > 0}
+            disabled={
+              seconds > 0 ||
+              isVerifying
+            }
             onPress={handleResend}>
 
             <Text
               style={[
                 styles.resend,
-                seconds > 0 &&
+
+                (seconds > 0 ||
+                  isVerifying) &&
                   styles.resendDisabled,
               ]}>
 
@@ -258,7 +399,10 @@ const OtpScreen = ({
 
         <View style={styles.testBox}>
 
-          <Text style={styles.testText}>
+          <Text
+            style={
+              styles.testText
+            }>
             Development OTP: 1234
           </Text>
 
@@ -356,33 +500,30 @@ const styles = StyleSheet.create({
     borderColor: '#D94A4A',
   },
 
-  error: {
-    marginTop: 12,
-    color: '#D94A4A',
-    fontSize: 13,
+  otpInputVerifying: {
+    opacity: 0.7,
   },
 
-  verifyButton: {
-    height: 56,
-    marginTop: 30,
-    borderRadius: 12,
-    backgroundColor: '#16794B',
+  statusContainer: {
+    marginTop: 18,
     alignItems: 'center',
-    justifyContent: 'center',
   },
 
-  buttonPressed: {
-    opacity: 0.85,
-  },
-
-  verifyText: {
-    color: '#FFFFFF',
-    fontSize: 16,
+  verifyingText: {
+    color: '#16794B',
+    fontSize: 14,
     fontWeight: '700',
   },
 
+  error: {
+    marginTop: 14,
+    color: '#D94A4A',
+    fontSize: 13,
+    textAlign: 'center',
+  },
+
   resendContainer: {
-    marginTop: 22,
+    marginTop: 30,
     flexDirection: 'row',
     justifyContent: 'center',
   },

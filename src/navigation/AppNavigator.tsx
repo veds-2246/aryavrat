@@ -15,11 +15,10 @@ import SubscriptionReviewScreen from '../screens/subscription/SubscriptionReview
 import ConfirmationScreen from '../screens/checkout/ConfirmationScreen';    
 import OrderDetailsScreen from '../screens/orders/OrderDetailsScreen';
 import ManageSubscriptionScreen from '../screens/subscription/ManageSubscriptionScreen';
-import changeSubscriptionScheduleScreen from '../screens/subscription/ChangeSubscriptionScheduleScreen';    
+import ChangeSubscriptionScheduleScreen from '../screens/subscription/ChangeSubscriptionScheduleScreen';    
 import MainTabs from './MainTabs';
 
 import {RootStackParamList} from './types';
-import ChangeSubscriptionScheduleScreen from '../screens/subscription/ChangeSubscriptionScheduleScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 

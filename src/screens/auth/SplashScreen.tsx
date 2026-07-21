@@ -1,33 +1,83 @@
 import React, {useEffect} from 'react';
+
 import {
   StatusBar,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {RootStackParamList} from '../../navigation/types';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>;
+import {
+  NativeStackScreenProps,
+} from '@react-navigation/native-stack';
 
-const SplashScreen = ({navigation}: Props) => {
+import {
+  RootStackParamList,
+} from '../../navigation/types';
+
+import {
+  useAuth,
+} from '../../context/AuthContext';
+
+type Props = NativeStackScreenProps<
+  RootStackParamList,
+  'Splash'
+>;
+
+const SplashScreen = ({
+  navigation,
+}: Props) => {
+  const {
+    isLoggedIn,
+    isAuthLoading,
+  } = useAuth();
+
   useEffect(() => {
+    /*
+     * Wait until AuthContext finishes
+     * checking AsyncStorage.
+     */
+    if (isAuthLoading) {
+      return;
+    }
+
     const timer = setTimeout(() => {
-      navigation.replace('Login');
+      /*
+       * Returning logged-in user:
+       * go directly to Home.
+       *
+       * New/logged-out user:
+       * go to Login.
+       */
+      if (isLoggedIn) {
+        navigation.replace('Home');
+      } else {
+        navigation.replace('Login');
+      }
     }, 2000);
 
-    return () => clearTimeout(timer);
-  }, [navigation]);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [
+    navigation,
+    isLoggedIn,
+    isAuthLoading,
+  ]);
 
   return (
     <View style={styles.container}>
+
       <StatusBar
         barStyle="light-content"
         backgroundColor="#16794B"
       />
 
       <View style={styles.logoContainer}>
-        <Text style={styles.logo}>🥛</Text>
+
+        <Text style={styles.logo}>
+          🥛
+        </Text>
 
         <Text style={styles.title}>
           Aryavrat
@@ -36,11 +86,13 @@ const SplashScreen = ({navigation}: Props) => {
         <Text style={styles.tagline}>
           Freshness delivered every morning
         </Text>
+
       </View>
 
       <Text style={styles.footer}>
         Fresh • Pure • Everyday
       </Text>
+
     </View>
   );
 };

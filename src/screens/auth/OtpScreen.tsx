@@ -5,6 +5,10 @@ import React, {
 } from 'react';
 
 import {
+  useAuth,
+} from '../../context/AuthContext';
+
+import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -33,6 +37,8 @@ const OtpScreen = ({
   route,
 }: Props) => {
   const {phoneNumber} = route.params;
+
+  const {login} = useAuth();
 
   const [otp, setOtp] = useState([
     '',
@@ -89,17 +95,32 @@ const OtpScreen = ({
      */
     setTimeout(() => {
       if (enteredOtp === '1234') {
-        navigation.reset({
-          index: 0,
-          routes: [
-            {
-              name: 'Home',
-            },
-          ],
-        });
+  login(phoneNumber)
+    .then(() => {
+      navigation.reset({
+        index: 0,
+        routes: [
+          {
+            name: 'Home',
+          },
+        ],
+      });
+    })
+    .catch(error => {
+      console.error(
+        'Failed to save login session:',
+        error,
+      );
 
-        return;
-      }
+      setIsVerifying(false);
+
+      setError(
+        'Unable to complete login. Please try again.',
+      );
+    });
+
+  return;
+}
 
       setIsVerifying(false);
 

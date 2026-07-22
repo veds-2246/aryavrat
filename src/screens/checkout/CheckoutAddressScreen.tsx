@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 
 import {
   KeyboardAvoidingView,
@@ -9,7 +9,6 @@ import {
   StatusBar,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 
@@ -21,6 +20,10 @@ import {
   RootStackParamList,
 } from '../../navigation/types';
 
+import {
+  useAddresses,
+} from '../../context/AddressContext';
+
 type Props = NativeStackScreenProps<
   RootStackParamList,
   'CheckoutAddress'
@@ -30,205 +33,115 @@ const CheckoutAddressScreen = ({
   navigation,
   route,
 }: Props) => {
-  const [fullName, setFullName] =
-    useState('');
+  const {
+  addresses,
+  isHydrated,
+  getDefaultAddress,
+} = useAddresses();
 
-  const [phone, setPhone] =
-    useState('');
+const [
+  selectedAddressId,
+  setSelectedAddressId,
+] = useState<string | null>(null);
 
-  const [house, setHouse] =
-    useState('');
+useEffect(() => {
+  if (!isHydrated) {
+    return;
+  }
 
-  const [area, setArea] =
-    useState('');
+  /*
+   * Keep the currently selected address
+   * if it still exists.
+   */
+  if (
+    selectedAddressId &&
+    addresses.some(
+      address =>
+        address.id === selectedAddressId,
+    )
+  ) {
+    return;
+  }
 
-  const [landmark, setLandmark] =
-    useState('');
+  /*
+   * Otherwise select the default address.
+   */
+  const defaultAddress =
+    getDefaultAddress();
 
-  const [city, setCity] =
-    useState('');
+  if (defaultAddress) {
+    setSelectedAddressId(
+      defaultAddress.id,
+    );
 
-  const [pincode, setPincode] =
-    useState('');
+    return;
+  }
+
+  /*
+   * Fallback to the first saved address
+   * if no default exists.
+   */
+  if (addresses.length > 0) {
+    setSelectedAddressId(
+      addresses[0].id,
+    );
+
+    return;
+  }
+
+  setSelectedAddressId(null);
+}, [
+  addresses,
+  getDefaultAddress,
+  isHydrated,
+  selectedAddressId,
+]);
+
+const selectedAddress =
+  addresses.find(
+    address =>
+      address.id === selectedAddressId,
+  );
+
+const handleAddAddress = () => {
+  navigation.navigate(
+    'AddEditAddress',
+    {},
+  );
+};
+
+const handleEditAddress = (
+  addressId: string,
+) => {
+  navigation.navigate(
+    'AddEditAddress',
+    {
+      addressId,
+    },
+  );
+};
 
   const [error, setError] =
     useState('');
 
-  const [
-    phoneError,
-    setPhoneError,
-  ] = useState('');
-
-  const [
-    pincodeError,
-    setPincodeError,
-  ] = useState('');
-
-  /*
-   * Validate mobile number while typing.
-   *
-   * Indian mobile numbers:
-   * - Exactly 10 digits
-   * - Start with 6, 7, 8, or 9
-   */
-  const handlePhoneChange = (
-    text: string,
-  ) => {
-    const value = text
-      .replace(/[^0-9]/g, '')
-      .slice(0, 10);
-
-    setPhone(value);
-    setError('');
-
-    if (value.length === 0) {
-      setPhoneError('');
-      return;
-    }
-
-    if (value.length < 10) {
-      setPhoneError(
-        'Enter a valid 10-digit mobile number.',
-      );
-
-      return;
-    }
-
-    if (!/^[6-9][0-9]{9}$/.test(value)) {
-      setPhoneError(
-        'Enter a valid Indian mobile number.',
-      );
-
-      return;
-    }
-
-    setPhoneError('');
-  };
-
-  /*
-   * Validate PIN code while typing.
-   */
-  const handlePincodeChange = (
-    text: string,
-  ) => {
-    const value = text
-      .replace(/[^0-9]/g, '')
-      .slice(0, 6);
-
-    setPincode(value);
-    setError('');
-
-    if (value.length === 0) {
-      setPincodeError('');
-      return;
-    }
-
-    if (value.length < 6) {
-      setPincodeError(
-        'Enter a valid 6-digit PIN code.',
-      );
-
-      return;
-    }
-
-    if (!/^[0-9]{6}$/.test(value)) {
-      setPincodeError(
-        'Enter a valid 6-digit PIN code.',
-      );
-
-      return;
-    }
-
-    setPincodeError('');
-  };
-
-  const validateAddress = () => {
-    /*
-     * Required field validation
-     */
-    if (
-      !fullName.trim() ||
-      !phone.trim() ||
-      !house.trim() ||
-      !area.trim() ||
-      !city.trim() ||
-      !pincode.trim()
-    ) {
+  const handleContinue = () => {
+    if (!selectedAddress) {
       setError(
-        'Please fill in all required fields.',
+        'Please select a delivery address to continue.',
       );
-
-      /*
-       * Also show inline validation
-       * if phone/PIN are incomplete.
-       */
-      if (
-        phone.length > 0 &&
-        !/^[6-9][0-9]{9}$/.test(phone)
-      ) {
-        setPhoneError(
-          'Enter a valid 10-digit mobile number.',
-        );
-      }
-
-      if (
-        pincode.length > 0 &&
-        !/^[0-9]{6}$/.test(pincode)
-      ) {
-        setPincodeError(
-          'Enter a valid 6-digit PIN code.',
-        );
-      }
-
       return;
     }
 
-    /*
-     * Final phone validation
-     */
-    if (
-      !/^[6-9][0-9]{9}$/.test(phone)
-    ) {
-      setPhoneError(
-        'Enter a valid 10-digit mobile number.',
-      );
-
-      setError(
-        'Please correct the highlighted fields.',
-      );
-
-      return;
-    }
-
-    /*
-     * Final PIN validation
-     */
-    if (
-      !/^[0-9]{6}$/.test(pincode)
-    ) {
-      setPincodeError(
-        'Enter a valid 6-digit PIN code.',
-      );
-
-      setError(
-        'Please correct the highlighted fields.',
-      );
-
-      return;
-    }
-
-    setPhoneError('');
-    setPincodeError('');
     setError('');
 
     const address = {
-      fullName: fullName.trim(),
-      phone,
-      house: house.trim(),
-      area: area.trim(),
-      landmark: landmark.trim(),
-      city: city.trim(),
-      pincode,
+      fullName: selectedAddress.fullName,
+      phone: selectedAddress.phoneNumber,
+      house: selectedAddress.house,
+      area: selectedAddress.area,
+      landmark: selectedAddress.landmark,
+      city: selectedAddress.city,
+      pincode: selectedAddress.pinCode,
     };
 
     /*
@@ -386,174 +299,153 @@ const CheckoutAddressScreen = ({
 
           </View>
 
-          <Text
-            style={
-              styles.sectionTitle
-            }>
-            Contact details
-          </Text>
+          <Text style={styles.sectionTitle}>
+  Choose delivery address
+</Text>
 
-          <Text style={styles.label}>
-            Full name *
-          </Text>
+{!isHydrated ? (
+  <View style={styles.addressMessageBox}>
+    <Text style={styles.addressMessageTitle}>
+      Loading addresses...
+    </Text>
+  </View>
+) : addresses.length === 0 ? (
+  <View style={styles.addressMessageBox}>
 
-          <TextInput
-            style={styles.input}
-            value={fullName}
-            onChangeText={text => {
-              setFullName(text);
-              setError('');
-            }}
-            placeholder="Enter your full name"
-            placeholderTextColor="#A2AAA5"
-          />
+    <Text style={styles.addressMessageTitle}>
+      No delivery address yet
+    </Text>
 
-          <Text style={styles.label}>
-            Mobile number *
-          </Text>
+    <Text style={styles.addressMessageText}>
+      Add an address to continue with your order.
+    </Text>
 
-          <View
-            style={[
-              styles.phoneContainer,
+    <Pressable
+      style={styles.addAddressButton}
+      onPress={handleAddAddress}>
 
-              phoneError
-                ? styles.invalidField
-                : null,
-            ]}>
+      <Text style={styles.addAddressButtonText}>
+        + Add Address
+      </Text>
+
+    </Pressable>
+
+  </View>
+) : (
+  <View>
+
+    {addresses.map(address => {
+      const isSelected =
+        address.id === selectedAddressId;
+
+      return (
+        <Pressable
+          key={address.id}
+          style={[
+            styles.addressCard,
+            isSelected
+              ? styles.selectedAddressCard
+              : undefined,
+          ]}
+          onPress={() =>
+            setSelectedAddressId(
+              address.id,
+            )
+          }>
+
+          <View style={styles.addressCardTop}>
 
             <View
-              style={
-                styles.countryCode
-              }>
+              style={[
+                styles.radioOuter,
+                isSelected
+                  ? styles.radioOuterSelected
+                  : undefined,
+              ]}>
 
-              <Text
-                style={
-                  styles.countryCodeText
-                }>
-                +91
+              {isSelected ? (
+                <View
+                  style={styles.radioInner}
+                />
+              ) : null}
+
+            </View>
+
+            <View style={styles.addressDetails}>
+
+              <View style={styles.addressLabelRow}>
+
+                <Text style={styles.addressLabel}>
+                  {address.label}
+                </Text>
+
+                {address.isDefault ? (
+                  <View style={styles.defaultBadge}>
+                    <Text style={styles.defaultBadgeText}>
+                      DEFAULT
+                    </Text>
+                  </View>
+                ) : null}
+
+              </View>
+
+              <Text style={styles.addressName}>
+                {address.fullName}
+              </Text>
+
+              <Text style={styles.addressText}>
+                {address.house}, {address.area}
+              </Text>
+
+              {address.landmark ? (
+                <Text style={styles.addressText}>
+                  {address.landmark}
+                </Text>
+              ) : null}
+
+              <Text style={styles.addressText}>
+                {address.city} - {address.pinCode}
+              </Text>
+
+              <Text style={styles.addressPhone}>
+                +91 {address.phoneNumber}
               </Text>
 
             </View>
 
-            <TextInput
-              style={styles.phoneInput}
-              value={phone}
-              onChangeText={
-                handlePhoneChange
-              }
-              placeholder="10-digit mobile number"
-              placeholderTextColor="#A2AAA5"
-              keyboardType="number-pad"
-              maxLength={10}
-            />
+            <Pressable
+              hitSlop={10}
+              onPress={() =>
+                handleEditAddress(
+                  address.id,
+                )
+              }>
+
+              <Text style={styles.editAddressText}>
+                Edit
+              </Text>
+
+            </Pressable>
 
           </View>
 
-          {phoneError !== '' && (
-            <Text
-              style={
-                styles.inlineError
-              }>
-              {phoneError}
-            </Text>
-          )}
+        </Pressable>
+      );
+    })}
 
-          <Text
-            style={
-              styles.sectionTitle
-            }>
-            Address
-          </Text>
+    <Pressable
+      style={styles.addAnotherButton}
+      onPress={handleAddAddress}>
 
-          <Text style={styles.label}>
-            House / Flat / Building *
-          </Text>
+      <Text style={styles.addAnotherText}>
+        + Add New Address
+      </Text>
 
-          <TextInput
-            style={styles.input}
-            value={house}
-            onChangeText={text => {
-              setHouse(text);
-              setError('');
-            }}
-            placeholder="House no., flat or building"
-            placeholderTextColor="#A2AAA5"
-          />
+    </Pressable>
 
-          <Text style={styles.label}>
-            Area / Street / Locality *
-          </Text>
-
-          <TextInput
-            style={styles.input}
-            value={area}
-            onChangeText={text => {
-              setArea(text);
-              setError('');
-            }}
-            placeholder="Area, street or locality"
-            placeholderTextColor="#A2AAA5"
-          />
-
-          <Text style={styles.label}>
-            Landmark
-          </Text>
-
-          <TextInput
-            style={styles.input}
-            value={landmark}
-            onChangeText={setLandmark}
-            placeholder="Nearby landmark (optional)"
-            placeholderTextColor="#A2AAA5"
-          />
-
-          <View style={styles.row}>
-
-  <View style={styles.halfField}>
-    <Text style={styles.label}>
-      City *
-    </Text>
-
-    <TextInput
-      style={styles.input}
-      value={city}
-      onChangeText={text => {
-        setCity(text);
-        setError('');
-      }}
-      placeholder="City"
-      placeholderTextColor="#A2AAA5"
-    />
   </View>
-
-  <View style={styles.halfField}>
-    <Text style={styles.label}>
-      PIN code *
-    </Text>
-
-    <TextInput
-      style={[
-        styles.input,
-        pincodeError
-          ? styles.invalidField
-          : null,
-      ]}
-      value={pincode}
-      onChangeText={handlePincodeChange}
-      placeholder="6 digits"
-      placeholderTextColor="#A2AAA5"
-      keyboardType="number-pad"
-      maxLength={6}
-    />
-  </View>
-
-</View>
-
-{pincodeError !== '' && (
-  <Text style={styles.inlineError}>
-    {pincodeError}
-  </Text>
 )}
+
           {error !== '' && (
             <View
               style={
@@ -571,11 +463,15 @@ const CheckoutAddressScreen = ({
           )}
 
           <Pressable
-            style={
-              styles.continueButton
-            }
-            onPress={
-              validateAddress
+            style={[
+              styles.continueButton,
+              !selectedAddress
+                ? styles.continueButtonDisabled
+                : undefined,
+            ]}
+            onPress={handleContinue}
+            disabled={
+              !isHydrated || !selectedAddress
             }>
 
             <Text
@@ -694,79 +590,6 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
 
-  label: {
-    color: '#445249',
-    fontSize: 12,
-    fontWeight: '600',
-    marginBottom: 7,
-  },
-
-  input: {
-    height: 52,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#DDE5E0',
-    borderRadius: 11,
-    paddingHorizontal: 14,
-    color: '#17231C',
-    fontSize: 14,
-    marginBottom: 17,
-  },
-
-  phoneContainer: {
-    height: 52,
-    flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#DDE5E0',
-    borderRadius: 11,
-    marginBottom: 4,
-    overflow: 'hidden',
-  },
-
-  invalidField: {
-    borderColor: '#D94A4A',
-    borderWidth: 1.5,
-  },
-
-  countryCode: {
-    paddingHorizontal: 14,
-    justifyContent: 'center',
-    borderRightWidth: 1,
-    borderRightColor: '#E2E8E4',
-    backgroundColor: '#F4F7F5',
-  },
-
-  countryCodeText: {
-    color: '#35433A',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-
-  phoneInput: {
-    flex: 1,
-    paddingHorizontal: 13,
-    color: '#17231C',
-    fontSize: 14,
-  },
-
-inlineError: {
-  color: '#D94A4A',
-  fontSize: 11,
-  marginTop: 4,
-  marginBottom: 12,
-  minHeight: 16,
-},
-
-  row: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-
-  halfField: {
-    flex: 1,
-  },
-
   errorBox: {
     backgroundColor: '#FFF0EE',
     borderRadius: 10,
@@ -788,6 +611,10 @@ inlineError: {
     marginTop: 24,
   },
 
+  continueButtonDisabled: {
+    opacity: 0.5,
+  },
+
   continueText: {
     color: '#FFFFFF',
     fontSize: 16,
@@ -801,4 +628,157 @@ inlineError: {
     textAlign: 'center',
     marginTop: 15,
   },
+
+  addressMessageBox: {
+  backgroundColor: '#FFFFFF',
+  borderWidth: 1,
+  borderColor: '#E2E9E5',
+  borderRadius: 14,
+  padding: 20,
+},
+
+addressMessageTitle: {
+  color: '#17231C',
+  fontSize: 15,
+  fontWeight: '700',
+},
+
+addressMessageText: {
+  color: '#748078',
+  fontSize: 12,
+  lineHeight: 18,
+  marginTop: 6,
+},
+
+addAddressButton: {
+  height: 48,
+  backgroundColor: '#16794B',
+  borderRadius: 10,
+  justifyContent: 'center',
+  alignItems: 'center',
+  marginTop: 18,
+},
+
+addAddressButtonText: {
+  color: '#FFFFFF',
+  fontSize: 14,
+  fontWeight: '700',
+},
+
+addressCard: {
+  backgroundColor: '#FFFFFF',
+  borderWidth: 1,
+  borderColor: '#E2E9E5',
+  borderRadius: 14,
+  padding: 16,
+  marginBottom: 12,
+},
+
+selectedAddressCard: {
+  borderColor: '#16794B',
+  borderWidth: 1.5,
+  backgroundColor: '#F7FCF9',
+},
+
+addressCardTop: {
+  flexDirection: 'row',
+  alignItems: 'flex-start',
+},
+
+radioOuter: {
+  width: 20,
+  height: 20,
+  borderRadius: 10,
+  borderWidth: 1.5,
+  borderColor: '#AAB4AE',
+  justifyContent: 'center',
+  alignItems: 'center',
+  marginTop: 2,
+},
+
+radioOuterSelected: {
+  borderColor: '#16794B',
+},
+
+radioInner: {
+  width: 10,
+  height: 10,
+  borderRadius: 5,
+  backgroundColor: '#16794B',
+},
+
+addressDetails: {
+  flex: 1,
+  marginLeft: 12,
+  marginRight: 10,
+},
+
+addressLabelRow: {
+  flexDirection: 'row',
+  alignItems: 'center',
+},
+
+addressLabel: {
+  color: '#17231C',
+  fontSize: 14,
+  fontWeight: '800',
+},
+
+defaultBadge: {
+  backgroundColor: '#EAF5EF',
+  paddingHorizontal: 7,
+  paddingVertical: 3,
+  borderRadius: 5,
+  marginLeft: 8,
+},
+
+defaultBadgeText: {
+  color: '#16794B',
+  fontSize: 8,
+  fontWeight: '800',
+},
+
+addressName: {
+  color: '#35433A',
+  fontSize: 13,
+  fontWeight: '700',
+  marginTop: 9,
+},
+
+addressText: {
+  color: '#6F7B73',
+  fontSize: 12,
+  lineHeight: 18,
+  marginTop: 2,
+},
+
+addressPhone: {
+  color: '#35433A',
+  fontSize: 12,
+  fontWeight: '600',
+  marginTop: 7,
+},
+
+editAddressText: {
+  color: '#16794B',
+  fontSize: 12,
+  fontWeight: '700',
+},
+
+addAnotherButton: {
+  height: 48,
+  borderWidth: 1,
+  borderColor: '#16794B',
+  borderRadius: 11,
+  justifyContent: 'center',
+  alignItems: 'center',
+  marginTop: 2,
+},
+
+addAnotherText: {
+  color: '#16794B',
+  fontSize: 13,
+  fontWeight: '700',
+},
+
 });

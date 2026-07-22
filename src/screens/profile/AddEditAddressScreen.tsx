@@ -86,7 +86,7 @@ const AddEditAddressScreen = () => {
     setPhoneNumber(editingAddress.phoneNumber);
     setHouse(editingAddress.house);
     setArea(editingAddress.area);
-    setLandmark(editingAddress.landmark);
+    setLandmark(editingAddress.landmark ?? '');
     setCity(editingAddress.city);
     setPinCode(editingAddress.pinCode);
     setLabel(editingAddress.label);
@@ -181,7 +181,7 @@ const handleSave = () => {
 };
 
   if (editingAddress) {
-    updateAddress(address);
+    updateAddress(address.id, address);
   } else {
     addAddress(address);
   }

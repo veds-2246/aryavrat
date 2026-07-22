@@ -106,4 +106,9 @@ export type RootStackParamList = {
   ChangeSubscriptionSchedule: {
     SubscriptionId: string;
   };
+
+  Addresses: undefined;
+  AddEditAddress: {
+    addressId?: string;
+  };
 };

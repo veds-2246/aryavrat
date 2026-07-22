@@ -17,7 +17,8 @@ import OrderDetailsScreen from '../screens/orders/OrderDetailsScreen';
 import ManageSubscriptionScreen from '../screens/subscription/ManageSubscriptionScreen';
 import ChangeSubscriptionScheduleScreen from '../screens/subscription/ChangeSubscriptionScheduleScreen';    
 import MainTabs from './MainTabs';
-
+import AddressesScreen from '../screens/profile/AddressesScreen';
+import AddEditAddressScreen from '../screens/profile/AddEditAddressScreen';
 import {RootStackParamList} from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -134,12 +135,28 @@ const AppNavigator = () => {
         />
 
         <Stack.Screen
-  name="ChangeSubscriptionSchedule"
-  component={ChangeSubscriptionScheduleScreen}
-  options={{
-    animation: 'slide_from_right',
-  }}
-/>
+          name="ChangeSubscriptionSchedule"
+          component={ChangeSubscriptionScheduleScreen}
+          options={{
+            animation: 'slide_from_right',
+          }}
+        />
+
+        <Stack.Screen
+          name="Addresses"
+          component={AddressesScreen}
+          options={{
+            animation: 'slide_from_right',
+          }}
+        />
+
+        <Stack.Screen
+          name="AddEditAddress"
+          component={AddEditAddressScreen}
+          options={{
+            title: 'Delivery Address',
+          }}
+        />
 
       </Stack.Navigator>
     </NavigationContainer>

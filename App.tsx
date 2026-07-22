@@ -11,11 +11,17 @@ import {
   OrderProvider,
 } from './src/context/OrderContext';
 
+import {
+  AddressProvider,
+} from './src/context/AddressContext';
+
 const App = () => {
   return (
     <AuthProvider>
       <OrderProvider>
-        <AppNavigator />
+        <AddressProvider>
+          <AppNavigator />
+        </AddressProvider>
       </OrderProvider>
     </AuthProvider>
   );

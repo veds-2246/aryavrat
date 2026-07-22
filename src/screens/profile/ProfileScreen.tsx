@@ -135,17 +135,20 @@ const ProfileScreen = () => {
         <View style={styles.menu}>
 
           <Pressable
-            style={styles.menuItem}>
+  style={styles.menuItem}
+  onPress={() =>
+    navigation.navigate('Addresses')
+  }>
 
-            <Text style={styles.menuText}>
-              📍  Delivery Address
-            </Text>
+  <Text style={styles.menuText}>
+    📍 Delivery Addresses
+  </Text>
 
-            <Text style={styles.chevron}>
-              ›
-            </Text>
+  <Text style={styles.chevron}>
+    ›
+  </Text>
 
-          </Pressable>
+</Pressable>
 
           <Pressable
             style={styles.menuItem}>

@@ -21,13 +21,13 @@ import {MainTabParamList} from '../../navigation/MainTabs';
 import {RootStackParamList} from '../../navigation/types';
 
 type ProductsScreenNavigationProp = CompositeNavigationProp<
-  NativeStackNavigationProp<RootStackParamList, 'Products'>,
-  BottomTabNavigationProp<MainTabParamList>
+  BottomTabNavigationProp<MainTabParamList>,
+  NativeStackNavigationProp<RootStackParamList>
 >;
 
 const ProductsScreen = () => {
   const navigation =
-  useNavigation<ProductsNavigationProp>();
+  useNavigation<ProductsScreenNavigationProp>();
 
 const openProduct = () => {
   navigation.navigate('ProductDetails', {

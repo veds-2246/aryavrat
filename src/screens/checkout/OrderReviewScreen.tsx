@@ -116,39 +116,22 @@ const OrderReviewScreen = ({
   const referenceId = `ORD-${Date.now()}`;
   const deliveryDate = getDeliveryDate();
 
-  let order: AppOrder;
-
-  if ((orderType ?? 'buyOnce') === 'buyOnce') {
-    order = {
-      id: referenceId,
-      type: 'buyOnce',
-      productId,
-      productName: product.name,
-      quantity,
-      status: 'confirmed',
-      createdAt: new Date().toISOString(),
-      deliveryDate,
-      pricePerDelivery: total,
-    };
-  } else {
-    order = {
-      id: referenceId,
-      type: 'subscription',
-      productId,
-      productName: product.name,
-      quantity,
-      status: 'confirmed',
-      createdAt: new Date().toISOString(),
-      startDate: deliveryDate,
-      subscriptionStatus: 'active',
-      pricePerDelivery: total,
-    };
-  }
+  const order: AppOrder = {
+    id: referenceId,
+    type: 'buyOnce',
+    productId,
+    productName: product.name,
+    quantity,
+    status: 'confirmed',
+    createdAt: new Date().toISOString(),
+    deliveryDate,
+    pricePerDelivery: total,
+  };
 
   addOrder(order);
 
   navigation.navigate('Confirmation', {
-    type: order.type,
+    type: 'buyOnce',
     productId,
     quantity,
     referenceId,
@@ -242,12 +225,9 @@ const OrderReviewScreen = ({
 
             <View style={styles.detailInfo}>
 
-              <Text
-                style={styles.detailLabel}>
-                {orderType === 'subscription'
-                  ? 'Subscription starting'
-                  : 'Delivery'}
-              </Text>
+             <Text style={styles.detailLabel}>
+  Delivery
+</Text>
 
               <Text
                 style={styles.detailValue}>
@@ -319,7 +299,7 @@ const OrderReviewScreen = ({
             <Pressable
               onPress={() =>
                 navigation.navigate('CheckoutAddress', {
-                  orderType: orderType ?? 'buyOnce',
+  orderType: 'buyOnce',
                   productId,
                   quantity,
                   deliveryOption,

@@ -36,7 +36,6 @@ const CheckoutAddressScreen = ({
   const {
   addresses,
   isHydrated,
-  getDefaultAddress,
 } = useAddresses();
 
 const [
@@ -67,15 +66,17 @@ useEffect(() => {
    * Otherwise select the default address.
    */
   const defaultAddress =
-    getDefaultAddress();
+  addresses.find(
+    address => address.isDefault,
+  );
 
-  if (defaultAddress) {
-    setSelectedAddressId(
-      defaultAddress.id,
-    );
+if (defaultAddress) {
+  setSelectedAddressId(
+    defaultAddress.id,
+  );
 
-    return;
-  }
+  return;
+}
 
   /*
    * Fallback to the first saved address
@@ -92,7 +93,6 @@ useEffect(() => {
   setSelectedAddressId(null);
 }, [
   addresses,
-  getDefaultAddress,
   isHydrated,
   selectedAddressId,
 ]);
@@ -139,7 +139,8 @@ const handleEditAddress = (
       phone: selectedAddress.phoneNumber,
       house: selectedAddress.house,
       area: selectedAddress.area,
-      landmark: selectedAddress.landmark,
+      // Ensure landmark is a string (DeliveryAddress expects a string)
+      landmark: selectedAddress.landmark ?? '',
       city: selectedAddress.city,
       pincode: selectedAddress.pinCode,
     };
@@ -347,11 +348,13 @@ const handleEditAddress = (
               ? styles.selectedAddressCard
               : undefined,
           ]}
-          onPress={() =>
-            setSelectedAddressId(
-              address.id,
-            )
-          }>
+          onPress={() => {
+              setSelectedAddressId(
+                    address.id,
+                    );
+                    
+                    setError('');
+                  }}>
 
           <View style={styles.addressCardTop}>
 

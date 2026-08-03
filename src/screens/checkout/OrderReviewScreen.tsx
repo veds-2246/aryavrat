@@ -1,9 +1,5 @@
-import { 
-    useOrders,
-} from '../../context/OrderContext';
-
+import { useOrders } from '../../context/OrderContext';
 import React from 'react';
-
 import {
   Pressable,
   SafeAreaView,
@@ -13,6 +9,8 @@ import {
   Text,
   View,
 } from 'react-native';
+
+import { AppOrder } from '../../types/orders';
 
 import {
   NativeStackScreenProps,
@@ -36,6 +34,7 @@ const OrderReviewScreen = ({
   route,
 }: Props) => {
   const {
+    orderType,
     productId,
     quantity,
     deliveryOption,
@@ -114,47 +113,46 @@ const OrderReviewScreen = ({
   };
 
   const handlePayment = () => {
-  const referenceId =
-    `ORD-${Date.now()}`;
+  const referenceId = `ORD-${Date.now()}`;
+  const deliveryDate = getDeliveryDate();
 
-  const deliveryDate =
-    getDeliveryDate();
+  let order: AppOrder;
 
-  addOrder({
-    id: referenceId,
-
-    type: 'buyOnce',
-
-    productId,
-
-    productName:
-      product.name,
-
-    quantity,
-
-    status: 'confirmed',
-
-    createdAt:
-      new Date().toISOString(),
-
-    deliveryDate,
-
-    pricePerDelivery:
-      total,
-  });
-
-  navigation.navigate(
-    'Confirmation',
-    {
+  if ((orderType ?? 'buyOnce') === 'buyOnce') {
+    order = {
+      id: referenceId,
       type: 'buyOnce',
-
       productId,
-
+      productName: product.name,
       quantity,
+      status: 'confirmed',
+      createdAt: new Date().toISOString(),
+      deliveryDate,
+      pricePerDelivery: total,
+    };
+  } else {
+    order = {
+      id: referenceId,
+      type: 'subscription',
+      productId,
+      productName: product.name,
+      quantity,
+      status: 'confirmed',
+      createdAt: new Date().toISOString(),
+      startDate: deliveryDate,
+      subscriptionStatus: 'active',
+      pricePerDelivery: total,
+    };
+  }
 
-      referenceId,
-    },
-  );
+  addOrder(order);
+
+  navigation.navigate('Confirmation', {
+    type: order.type,
+    productId,
+    quantity,
+    referenceId,
+  });
 };
 
   return (
@@ -207,44 +205,23 @@ const OrderReviewScreen = ({
 
           <View style={styles.productRow}>
 
-            <View
-              style={styles.productIcon}>
-
-              <Text style={styles.milkEmoji}>
-                🥛
-              </Text>
-
+            <View style={styles.productImage}>
+              <Text style={styles.milkEmoji}>🥛</Text>
             </View>
 
-            <View
-              style={styles.productInfo}>
+            <View style={styles.productInfo}>
+              <Text style={styles.productName}>{product.name}</Text>
 
-              <Text
-                style={styles.productName}>
+              <Text style={styles.variantText}>Variant: {formatQuantity(quantity)}</Text>
 
-                {product.name}
-
-              </Text>
-
-              <Text
-                style={
-                  styles.productCalculation
-                }>
-
-                {formatQuantity(quantity)}
-                {' × '}
-                ₹{product.pricePerLitre}/L
-
-              </Text>
-
+              <Text style={styles.quantityText}>Quantity: {quantity}</Text>
             </View>
 
-            <Text
-              style={styles.productPrice}>
+            <View style={styles.priceInfo}>
+              <Text style={styles.productPrice}>₹{subtotal.toFixed(0)}</Text>
 
-              ₹{subtotal.toFixed(0)}
-
-            </Text>
+              <Text style={styles.pricePerLitre}>₹{product.pricePerLitre}/L</Text>
+            </View>
 
           </View>
 
@@ -267,17 +244,14 @@ const OrderReviewScreen = ({
 
               <Text
                 style={styles.detailLabel}>
-                Delivery date
+                {orderType === 'subscription'
+                  ? 'Subscription starting'
+                  : 'Delivery'}
               </Text>
 
               <Text
                 style={styles.detailValue}>
-                {getDeliveryDate()}
-              </Text>
-
-              <Text
-                style={styles.morning}>
-                🌅 Morning delivery
+                Tomorrow Morning
               </Text>
 
             </View>
@@ -344,7 +318,12 @@ const OrderReviewScreen = ({
 
             <Pressable
               onPress={() =>
-                navigation.goBack()
+                navigation.navigate('CheckoutAddress', {
+                  orderType: orderType ?? 'buyOnce',
+                  productId,
+                  quantity,
+                  deliveryOption,
+                })
               }>
 
               <Text style={styles.change}>
@@ -367,7 +346,7 @@ const OrderReviewScreen = ({
 
             <Text
               style={styles.summaryLabel}>
-              Subtotal
+              Milk Total
             </Text>
 
             <Text
@@ -395,6 +374,18 @@ const OrderReviewScreen = ({
 
           </View>
 
+          <View style={styles.summaryRow}>
+
+            <Text style={styles.summaryLabel}>
+              Discount
+            </Text>
+
+            <Text style={styles.summaryValue}>
+              ₹0
+            </Text>
+
+          </View>
+
           <View style={styles.divider} />
 
           <View style={styles.summaryRow}>
@@ -402,7 +393,7 @@ const OrderReviewScreen = ({
             <View>
 
               <Text style={styles.totalLabel}>
-                Total
+                Grand Total
               </Text>
 
               <Text style={styles.taxText}>
@@ -411,9 +402,26 @@ const OrderReviewScreen = ({
 
             </View>
 
-            <Text style={styles.totalValue}>
+            <Text style={styles.grandTotalValue}>
               ₹{total.toFixed(0)}
             </Text>
+
+          </View>
+
+        </View>
+
+        <View style={styles.paymentMethodCard}>
+
+          <View style={styles.paymentOptionRow}>
+
+            <View style={styles.upiIcon}>
+              <Text style={styles.milkEmoji}>🔺</Text>
+            </View>
+
+            <View style={styles.paymentOptionInfo}>
+              <Text style={styles.paymentOptionTitle}>UPI</Text>
+              <Text style={styles.paymentOptionSubtitle}>Pay securely using your UPI app</Text>
+            </View>
 
           </View>
 
@@ -551,6 +559,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
+  productImage: {
+    width: 64,
+    height: 64,
+    borderRadius: 12,
+    backgroundColor: '#EAF5EF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
   milkEmoji: {
     fontSize: 29,
   },
@@ -564,6 +581,28 @@ const styles = StyleSheet.create({
     color: '#17231C',
     fontSize: 15,
     fontWeight: '700',
+  },
+
+  variantText: {
+    color: '#7C8880',
+    fontSize: 12,
+    marginTop: 6,
+  },
+
+  quantityText: {
+    color: '#6F7D74',
+    fontSize: 12,
+    marginTop: 4,
+  },
+
+  priceInfo: {
+    alignItems: 'flex-end',
+  },
+
+  pricePerLitre: {
+    color: '#7C8880',
+    fontSize: 11,
+    marginTop: 6,
   },
 
   productCalculation: {
@@ -689,6 +728,52 @@ const styles = StyleSheet.create({
     color: '#16794B',
     fontSize: 21,
     fontWeight: '800',
+  },
+
+  grandTotalValue: {
+    color: '#16794B',
+    fontSize: 21,
+    fontWeight: '800',
+  },
+
+  paymentMethodCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E3EAE6',
+    padding: 12,
+    marginTop: 16,
+  },
+
+  paymentOptionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  upiIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    backgroundColor: '#F5F9F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+
+  paymentOptionInfo: {
+    flex: 1,
+  },
+
+  paymentOptionTitle: {
+    color: '#17231C',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+
+  paymentOptionSubtitle: {
+    color: '#7C8880',
+    fontSize: 11,
+    marginTop: 2,
   },
 
   paymentInfo: {

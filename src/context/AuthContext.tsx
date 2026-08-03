@@ -127,10 +127,15 @@ export const AuthProvider = ({
       phoneNumber: mobileNumber,
     };
 
-    await AsyncStorage.setItem(
-      AUTH_STORAGE_KEY,
-      JSON.stringify(session),
-    );
+    try {
+      await AsyncStorage.setItem(
+        AUTH_STORAGE_KEY,
+        JSON.stringify(session),
+      );
+    } catch (error) {
+      console.error('Failed to save auth session:', error);
+      // proceed to update local state even if persistence failed
+    }
 
     setPhoneNumber(mobileNumber);
     setIsLoggedIn(true);
@@ -143,9 +148,13 @@ export const AuthProvider = ({
    * It does NOT delete orders.
    */
   const logout = async () => {
-    await AsyncStorage.removeItem(
-      AUTH_STORAGE_KEY,
-    );
+    try {
+      await AsyncStorage.removeItem(
+        AUTH_STORAGE_KEY,
+      );
+    } catch (error) {
+      console.error('Failed to remove auth session:', error);
+    }
 
     setPhoneNumber(null);
     setIsLoggedIn(false);

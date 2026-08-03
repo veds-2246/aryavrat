@@ -115,11 +115,21 @@ const AddressesScreen = () => {
                   </Pressable>
                 )}
 
-                <Pressable>
-                  <Text style={styles.action}>
-                    Edit
-                  </Text>
-                </Pressable>
+                <Pressable
+  onPress={() =>
+    navigation.navigate(
+      'AddEditAddress',
+      {
+        addressId: item.id,
+      },
+    )
+  }>
+
+  <Text style={styles.action}>
+    Edit
+  </Text>
+
+</Pressable>
 
                 <Pressable
                   onPress={() =>
@@ -142,7 +152,7 @@ const AddressesScreen = () => {
         <Pressable
   style={styles.addButton}
   onPress={() =>
-    navigation.navigate('AddEditAddress')
+    navigation.navigate('AddEditAddress', {},)
   }>
 
   <Text style={styles.addText}>

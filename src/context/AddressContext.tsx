@@ -135,10 +135,18 @@ export const AddressProvider = ({
       return;
     }
 
-    AsyncStorage.setItem(
-      getStorageKey(phoneNumber),
-      JSON.stringify(addresses),
-    );
+    const save = async () => {
+      try {
+        await AsyncStorage.setItem(
+          getStorageKey(phoneNumber),
+          JSON.stringify(addresses),
+        );
+      } catch (error) {
+        console.error('Failed saving addresses:', error);
+      }
+    };
+
+    save();
   }, [
     addresses,
     phoneNumber,

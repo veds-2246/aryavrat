@@ -36,12 +36,9 @@ const ConfirmationScreen = ({
     referenceId,
   } = route.params;
 
-  const isSubscription =
-    type === 'subscription';
+  const isSubscription = type === 'subscription';
 
-  const formatQuantity = (
-    litres: number,
-  ) => {
+  const formatQuantity = (litres: number) => {
     if (litres === 0.5) {
       return '500 ml';
     }
@@ -62,6 +59,23 @@ const ConfirmationScreen = ({
     );
   };
 
+  const viewOrders = () => {
+    // Reset to Home then open Orders tab
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [
+          {
+            name: 'Home',
+            state: {
+              routes: [{ name: 'Orders' }],
+            },
+          },
+        ],
+      }),
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar
@@ -72,89 +86,47 @@ const ConfirmationScreen = ({
       <View style={styles.content}>
 
         <View style={styles.successCircle}>
-          <Text style={styles.checkmark}>
-            ✓
-          </Text>
+          <Text style={styles.checkmark}>✓</Text>
         </View>
 
         <Text style={styles.successLabel}>
-          CONFIRMED
+          SUCCESS
         </Text>
 
         <Text style={styles.title}>
           {isSubscription
-            ? 'Subscription created!'
-            : 'Order placed!'}
+            ? 'Subscription Started Successfully'
+            : 'Order Placed Successfully'}
         </Text>
 
         <Text style={styles.subtitle}>
           {isSubscription
-            ? 'Your milk subscription has been created successfully.'
-            : 'Your one-time milk order has been placed successfully.'}
+            ? 'Your subscription is active. You will receive your deliveries automatically.'
+            : 'Your order has been placed and is being prepared for delivery.'}
         </Text>
 
         <View style={styles.card}>
 
           <View style={styles.row}>
-            <Text style={styles.label}>
-              Product
-            </Text>
-
-            <Text style={styles.value}>
-              Fresh Cow Milk
-            </Text>
+            <Text style={styles.label}>Order ID</Text>
+            <Text style={styles.reference}>{referenceId}</Text>
           </View>
 
           <View style={styles.divider} />
 
           <View style={styles.row}>
-            <Text style={styles.label}>
-              Quantity
-            </Text>
-
-            <Text style={styles.value}>
-              {formatQuantity(quantity)}
-            </Text>
-          </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.row}>
-            <Text style={styles.label}>
-              Type
-            </Text>
-
-            <Text style={styles.value}>
-              {isSubscription
-                ? 'Subscription'
-                : 'One-time order'}
-            </Text>
-          </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.row}>
-            <Text style={styles.label}>
-              Reference
-            </Text>
-
-            <Text style={styles.reference}>
-              {referenceId}
-            </Text>
+            <Text style={styles.label}>Estimated delivery</Text>
+            <Text style={styles.value}>Tomorrow Morning</Text>
           </View>
 
         </View>
 
         <View style={styles.infoBox}>
 
-          <Text style={styles.infoIcon}>
-            🌅
-          </Text>
+          <Text style={styles.infoIcon}>📦</Text>
 
           <Text style={styles.infoText}>
-            Your delivery is scheduled for the
-            morning. You can manage upcoming
-            deliveries from My Orders.
+            You can view or manage your orders from the Orders screen.
           </Text>
 
         </View>
@@ -163,17 +135,10 @@ const ConfirmationScreen = ({
 
           <Pressable
             style={styles.ordersButton}
-            onPress={() => {
-              /*
-               * We will connect this directly
-               * to the Orders tab after adding
-               * persistent order storage.
-               */
-              goHome();
-            }}>
+            onPress={viewOrders}>
 
             <Text style={styles.ordersButtonText}>
-              View My Orders
+              View Orders
             </Text>
 
           </Pressable>
@@ -183,7 +148,7 @@ const ConfirmationScreen = ({
             onPress={goHome}>
 
             <Text style={styles.homeButtonText}>
-              Back to Home
+              Continue Shopping
             </Text>
 
           </Pressable>

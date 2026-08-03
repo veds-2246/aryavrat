@@ -53,6 +53,15 @@ type OrderContextType = {
     id: string,
   ) => AppOrder | undefined;
 
+  /**
+   * Update top-level fields of an order by id.
+   * Patch must not contain `id`.
+   */
+  updateOrder: (
+    id: string,
+    patch: Partial<Omit<AppOrder, 'id'>>,
+  ) => void;
+
   updateOrderStatus: (
     id: string,
     status: OrderStatus,
@@ -345,6 +354,29 @@ export const OrderProvider = ({
   };
 
   /*
+   * Update arbitrary fields of an order.
+   * This keeps the API backwards-compatible and
+   * allows screens to apply small patches without
+   * recreating the whole AppOrder object.
+   */
+  const updateOrder = (
+    id: string,
+    patch: Partial<Omit<AppOrder, 'id'>>,
+  ) => {
+    if (patch.hasOwnProperty('id')) {
+      // Never allow changing the id
+      // eslint-disable-next-line no-console
+      console.warn('updateOrder: patch must not contain id');
+    }
+
+    setOrders(previousOrders =>
+      previousOrders.map(order =>
+        order.id === id ? { ...order, ...patch } : order,
+      ),
+    );
+  };
+
+  /*
    * Update Buy Once order status.
    */
   const updateOrderStatus = (
@@ -474,12 +506,13 @@ export const OrderProvider = ({
 
         setNextDeliverySkipped,
 
+        updateOrder,
         updateSubscriptionSchedule,
       }}>
 
-      {children}
+        {children}
 
-    </OrderContext.Provider>
+      </OrderContext.Provider>
   );
 };
 

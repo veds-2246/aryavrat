@@ -118,6 +118,9 @@ const SubscriptionReviewScreen = ({
     );
   };
 
+  const getStartLabel = () =>
+    startOption === 'tomorrow' ? 'Tomorrow' : 'Day after tomorrow';
+
   const getEstimatedDeliveries = () => {
   if (schedule === 'daily') {
     return 30;
@@ -329,11 +332,11 @@ schedule,
           <View style={styles.detailLine}>
 
             <Text style={styles.detailLabel}>
-              First delivery
+              Delivery starts
             </Text>
 
             <Text style={styles.detailValue}>
-              {getStartDate()}
+              {getStartLabel()} ({getStartDate()})
             </Text>
 
           </View>
@@ -463,6 +466,23 @@ schedule,
 
         </View>
 
+        <View style={styles.paymentMethodCard}>
+
+          <View style={styles.paymentOptionRow}>
+
+            <View style={styles.upiIcon}>
+              <Text style={styles.milkEmoji}>🔺</Text>
+            </View>
+
+            <View style={styles.paymentOptionInfo}>
+              <Text style={styles.paymentOptionTitle}>UPI</Text>
+              <Text style={styles.paymentOptionSubtitle}>Pay securely using your UPI app</Text>
+            </View>
+
+          </View>
+
+        </View>
+
         <View style={styles.noticeBox}>
 
           <Text style={styles.noticeIcon}>
@@ -497,7 +517,7 @@ schedule,
           </View>
 
           <Text style={styles.buttonText}>
-            Continue ›
+            Start subscription
           </Text>
 
         </Pressable>
@@ -813,6 +833,46 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: 22,
+  },
+
+  paymentMethodCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E3EAE6',
+    padding: 12,
+    marginTop: 16,
+  },
+
+  paymentOptionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  upiIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    backgroundColor: '#F5F9F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+
+  paymentOptionInfo: {
+    flex: 1,
+  },
+
+  paymentOptionTitle: {
+    color: '#17231C',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+
+  paymentOptionSubtitle: {
+    color: '#7C8880',
+    fontSize: 11,
+    marginTop: 2,
   },
 
   buttonSmall: {

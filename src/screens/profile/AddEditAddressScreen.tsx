@@ -68,14 +68,12 @@ const AddEditAddressScreen = () => {
   const [isDefault, setIsDefault] =
     useState(true);
 
-  const [errors, setErrors] = useState({
-  fullName: '',
-  phoneNumber: '',
-  house: '',
-  area: '',
-  city: '',
-  pinCode: '',
-});
+  const [fullNameError, setFullNameError] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+  const [houseError, setHouseError] = useState('');
+  const [areaError, setAreaError] = useState('');
+  const [cityError, setCityError] = useState('');
+  const [pinCodeError, setPinCodeError] = useState('');
   useEffect(() => {
 
     if (!editingAddress) {
@@ -121,72 +119,93 @@ const AddressTypeButton = ({
     </Pressable>
   );
 
-  const validate = () => {
-    const newErrors = {
-      fullName: '',
-      phoneNumber: '',
-      house: '',
-      area: '',
-      city: '',
-      pinCode: '',
+  const validateForm = () => {
+      let valid = true;
+
+      // Full name
+      if (!fullName.trim()) {
+        setFullNameError('Full name is required.');
+        valid = false;
+      } else {
+        setFullNameError('');
+      }
+
+      // Phone: required, 10 digits, digits only
+      if (!phoneNumber) {
+        setPhoneError('Phone number is required.');
+        valid = false;
+      } else if (!/^\d{10}$/.test(phoneNumber)) {
+        setPhoneError('Enter a valid 10-digit mobile number.');
+        valid = false;
+      } else {
+        setPhoneError('');
+    }
+
+      // House
+      if (!house.trim()) {
+        setHouseError('House / Flat number is required.');
+        valid = false;
+      } else {
+        setHouseError('');
+    }
+
+      // Area
+      if (!area.trim()) {
+        setAreaError('Area / Locality is required.');
+        valid = false;
+      } else {
+        setAreaError('');
+      }
+
+      // City
+      if (!city.trim()) {
+        setCityError('City is required.');
+        valid = false;
+      } else {
+        setCityError('');
+      }
+
+      // PIN
+      if (!pinCode) {
+        setPinCodeError('PIN code is required.');
+        valid = false;
+      } else if (!/^\d{6}$/.test(pinCode)) {
+        setPinCodeError('Enter a valid 6-digit PIN code.');
+        valid = false;
+      } else {
+        setPinCodeError('');
+      }
+
+      return valid;
     };
-
-    if (!fullName.trim()) {
-      newErrors.fullName = 'Full name is required.';
-    }
-
-    if (!/^\d{10}$/.test(phoneNumber)) {
-      newErrors.phoneNumber = 'Enter a valid 10-digit mobile number.';
-    }
-
-    if (!house.trim()) {
-      newErrors.house = 'House / Flat number is required.';
-    }
-
-    if (!area.trim()) {
-      newErrors.area = 'Area / Locality is required.';
-    }
-
-    if (!city.trim()) {
-      newErrors.city = 'City is required.';
-    }
-
-    if (!/^\d{6}$/.test(pinCode)) {
-      newErrors.pinCode = 'Enter a valid 6-digit PIN code.';
-    }
-
-    setErrors(newErrors);
-
-    return Object.values(newErrors).every(v => v === '');
-  };
 
 const handleSave = () => {
 
-  if (!validate()) {
+    if (!validateForm()) {
     return;
   }
 
   const address: Address = {
-  id: editingAddress?.id ?? Date.now().toString(),
+      id: editingAddress?.id ?? Date.now().toString(),
 
-  fullName: fullName.trim(),
-  phoneNumber,
-  house: house.trim(),
-  area: area.trim(),
-  landmark: landmark.trim(),
-  city: city.trim(),
-  pinCode,
-  label,
-  isDefault,
-};
+      fullName: fullName.trim(),
+      phoneNumber,
+      house: house.trim(),
+      area: area.trim(),
+      landmark: landmark.trim(),
+      city: city.trim(),
+      pinCode,
+      label,
+      isDefault,
+    };
 
-  if (editingAddress) {
-    updateAddress(address.id, address);
-  } else {
-    addAddress(address);
-  }
+    if (editingAddress) {
+      updateAddress(address.id, address);
+    } else {
+      addAddress(address);
+    }
 
-  navigation.goBack();
+    navigation.goBack();
 };
 
   return (
@@ -213,31 +232,22 @@ const handleSave = () => {
 <TextInput
   value={fullName}
   onChangeText={text => {
-  setFullName(text);
+    setFullName(text);
 
-  if (errors.fullName) {
-    const error =
-      text.trim().length > 0
-        ? ''
-        : 'Full name is required.';
-
-    setErrors(prev => ({
-      ...prev,
-      fullName: error,
-    }));
-  }
-}}
+    if (fullNameError) {
+      const error = text.trim().length > 0 ? '' : 'Full name is required.';
+      setFullNameError(error);
+    }
+  }}
   placeholder="Enter full name"
   style={[
     styles.input,
-    errors.fullName && styles.inputError,
+    fullNameError && styles.inputError,
   ]}
 />
 
-{errors.fullName ? (
-  <Text style={styles.errorText}>
-    {errors.fullName}
-  </Text>
+{fullNameError ? (
+  <Text style={styles.errorText}>{fullNameError}</Text>
 ) : null}
 
         <Text style={styles.label}>
@@ -245,41 +255,28 @@ const handleSave = () => {
         </Text>
 
         <TextInput
-  value={phoneNumber}
-  onChangeText={text => {
+          value={phoneNumber}
+          onChangeText={text => {
+            const value = text.replace(/\D/g, '');
 
-  const value = text.replace(/\D/g, '');
+            setPhoneNumber(value);
 
-  setPhoneNumber(value);
+            if (phoneError) {
+              const error = /^\d{10}$/.test(value) ? '' : 'Enter a valid 10-digit mobile number.';
+              setPhoneError(error);
+            }
+          }}
+          placeholder="10 digit mobile number"
+          keyboardType="number-pad"
+          maxLength={10}
+          style={[
+            styles.input,
+            phoneError && styles.inputError,
+          ]}
+        />
 
-  if (errors.phoneNumber) {
-
-    const error =
-      /^\d{10}$/.test(value)
-        ? ''
-        : 'Enter a valid 10-digit mobile number.';
-
-    setErrors(prev => ({
-      ...prev,
-      phoneNumber: error,
-    }));
-
-  }
-
-}}
-  placeholder="10 digit mobile number"
-  keyboardType="number-pad"
-  maxLength={10}
-  style={[
-    styles.input,
-    errors.phoneNumber && styles.inputError,
-  ]}
-/>
-
-{errors.phoneNumber ? (
-  <Text style={styles.errorText}>
-    {errors.phoneNumber}
-  </Text>
+{phoneError ? (
+  <Text style={styles.errorText}>{phoneError}</Text>
 ) : null}
 
         <Text style={styles.label}>
@@ -287,66 +284,50 @@ const handleSave = () => {
         </Text>
 
         <TextInput
-          value={house}
-          onChangeText={text => {
-  setHouse(text);
+                  value={house}
+                  onChangeText={text => {
+                    setHouse(text);
 
-  if (errors.house) {
-    const error =
-      text.trim().length > 0
-        ? ''
-        : 'House / Flat number is required.';
+                    if (houseError) {
+                      const error = text.trim().length > 0 ? '' : 'House / Flat number is required.';
+                      setHouseError(error);
+                    }
+                  }}
+                  placeholder="Flat, House, Building"
+                  style={[
+                    styles.input,
+                    houseError && styles.inputError,
+                  ]}
+                />
 
-    setErrors(prev => ({
-      ...prev,
-      house: error,
-    }));
-  }
-}}
-          placeholder="Flat, House, Building"
-          style={[
-            styles.input,
-            errors.house && styles.inputError,
-          ]}
-        />
-
-        {errors.house ? (
-          <Text style={styles.errorText}>
-            {errors.house}
-          </Text>
-        ) : null}
+                {houseError ? (
+                  <Text style={styles.errorText}>{houseError}</Text>
+                ) : null}
 
         <Text style={styles.label}>
           Area / Locality <Text style={styles.required}>*</Text>
         </Text>
 
         <TextInput
-          value={area}
-         onChangeText={text => {
-  setArea(text);
+                  value={area}
+                 onChangeText={text => {
+                    setArea(text);
 
-  if (errors.area) {
-    const error =
-      text.trim().length > 0
-        ? ''
-        : 'Area / Locality is required.';
+                    if (areaError) {
+                      const error = text.trim().length > 0 ? '' : 'Area / Locality is required.';
+                      setAreaError(error);
+                    }
+                  }}
+                  placeholder="Area"
+                  style={[
+                    styles.input,
+                    areaError && styles.inputError,
+                  ]}
+                />
 
-    setErrors(prev => ({
-      ...prev,
-      area: error,
-    }));
-  }
-}}
-          placeholder="Area"
-          style={[
-            styles.input,
-            errors.area && styles.inputError,
-          ]}
-        />
-
-        {errors.area ? (
-          <Text style={styles.errorText}>{errors.area}</Text>
-        ) : null}
+                {areaError ? (
+                  <Text style={styles.errorText}>{areaError}</Text>
+                ) : null}
 
         <Text style={styles.label}>
           Landmark (Optional)
@@ -364,73 +345,53 @@ const handleSave = () => {
         </Text>
 
         <TextInput
-          value={city}
-          onChangeText={text => {
-  setCity(text);
+                  value={city}
+                  onChangeText={text => {
+                    setCity(text);
 
-  if (errors.city) {
-    const error =
-      text.trim().length > 0
-        ? ''
-        : 'City is required.';
+                    if (cityError) {
+                      const error = text.trim().length > 0 ? '' : 'City is required.';
+                      setCityError(error);
+                    }
+                  }}
+                  placeholder="City"
+                  style={[
+                    styles.input,
+                    cityError && styles.inputError,
+                  ]}
+                />
 
-    setErrors(prev => ({
-      ...prev,
-      city: error,
-    }));
-  }
-}}
-          placeholder="City"
-          style={[
-            styles.input,
-            errors.city && styles.inputError,
-          ]}
-        />
-
-        {errors.city ? (
-          <Text style={styles.errorText}>{errors.city}</Text>
-                ) : null}
+                {cityError ? (
+                  <Text style={styles.errorText}>{cityError}</Text>
+                        ) : null}
 
         <Text style={styles.label}>
           PIN Code <Text style={styles.required}>*</Text>
         </Text>
 
         <TextInput
-  value={pinCode}
-  onChangeText={text => {
+          value={pinCode}
+          onChangeText={text => {
+            const value = text.replace(/\D/g, '');
 
-  const value = text.replace(/\D/g, '');
+            setPinCode(value);
 
-  setPinCode(value);
+            if (pinCodeError) {
+              const error = /^\d{6}$/.test(value) ? '' : 'Enter a valid 6-digit PIN code.';
+              setPinCodeError(error);
+            }
+          }}
+          placeholder="6 digit PIN"
+          keyboardType="number-pad"
+          maxLength={6}
+          style={[
+            styles.input,
+            pinCodeError && styles.inputError,
+          ]}
+        />
 
-  if (errors.pinCode) {
-
-    const error =
-      /^\d{6}$/.test(value)
-        ? ''
-        : 'Enter a valid 6-digit PIN code.';
-
-    setErrors(prev => ({
-      ...prev,
-      pinCode: error,
-    }));
-
-  }
-
-}}
-  placeholder="6 digit PIN"
-  keyboardType="number-pad"
-  maxLength={6}
-  style={[
-    styles.input,
-    errors.pinCode && styles.inputError,
-  ]}
-/>
-
-{errors.pinCode ? (
-  <Text style={styles.errorText}>
-    {errors.pinCode}
-  </Text>
+{pinCodeError ? (
+  <Text style={styles.errorText}>{pinCodeError}</Text>
 ) : null}
 
         <Text style={styles.sectionTitle}>

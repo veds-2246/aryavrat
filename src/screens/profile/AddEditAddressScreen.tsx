@@ -66,7 +66,7 @@ const AddEditAddressScreen = () => {
   >('Home');
 
   const [isDefault, setIsDefault] =
-    useState(true);
+    useState(false);
 
   const [fullNameError, setFullNameError] = useState('');
   const [phoneError, setPhoneError] = useState('');

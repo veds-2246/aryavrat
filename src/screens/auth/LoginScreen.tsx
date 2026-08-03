@@ -22,28 +22,39 @@ const LoginScreen = ({navigation}: Props) => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [error, setError] = useState('');
 
-  const handleSendOTP = () => {
-    if (phoneNumber.length !== 10) {
-      setError('Please enter a valid 10-digit mobile number.');
-      return;
-    }
+ const handleSendOTP = () => {
+  if (phoneNumber.length === 0) {
+    setError('Mobile number is required.');
+    return;
+  }
 
-    setError('');
+  if (phoneNumber.length !== 10) {
+    setError('Enter a valid 10-digit mobile number.');
+    return;
+  }
 
-    navigation.navigate('OTP', {
-      phoneNumber,
-    });
-  };
+  setError('');
+
+  navigation.navigate('OTP', {
+    phoneNumber,
+  });
+};
 
   const handlePhoneChange = (value: string) => {
-    const cleaned = value.replace(/[^0-9]/g, '');
+  const cleaned = value
+    .replace(/[^0-9]/g, '')
+    .slice(0, 10);
 
-    setPhoneNumber(cleaned);
+  setPhoneNumber(cleaned);
 
-    if (error) {
-      setError('');
-    }
-  };
+  if (cleaned.length === 0) {
+    setError('Mobile number is required.');
+  } else if (cleaned.length < 10) {
+    setError('Enter a valid 10-digit mobile number.');
+  } else {
+    setError('');
+  }
+};
 
   return (
     <KeyboardAvoidingView
@@ -79,8 +90,8 @@ const LoginScreen = ({navigation}: Props) => {
         </Text>
 
         <Text style={styles.label}>
-          Mobile Number
-        </Text>
+  Mobile Number <Text style={styles.required}>*</Text>
+</Text>
 
         <View
           style={[
@@ -113,11 +124,16 @@ const LoginScreen = ({navigation}: Props) => {
         ) : null}
 
         <Pressable
-          style={({pressed}) => [
-            styles.button,
-            pressed && styles.buttonPressed,
-          ]}
-          onPress={handleSendOTP}>
+  disabled={phoneNumber.length !== 10}
+  style={({pressed}) => [
+    styles.button,
+    phoneNumber.length !== 10 &&
+      styles.buttonDisabled,
+    pressed &&
+      phoneNumber.length === 10 &&
+      styles.buttonPressed,
+  ]}
+  onPress={handleSendOTP}>
 
           <Text style={styles.buttonText}>
             Send OTP
@@ -248,4 +264,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 22,
   },
+
+  required: {
+  color: '#D94A4A',
+  },
+
+  buttonDisabled: {
+  backgroundColor: '#B8C4BD',
+},
+
 });

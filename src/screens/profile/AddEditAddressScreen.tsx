@@ -234,10 +234,12 @@ const handleSave = () => {
   onChangeText={text => {
     setFullName(text);
 
-    if (fullNameError) {
-      const error = text.trim().length > 0 ? '' : 'Full name is required.';
-      setFullNameError(error);
-    }
+    const error =
+  text.trim().length > 0
+    ? ''
+    : 'Full name is required.';
+
+setFullNameError(error);
   }}
   placeholder="Enter full name"
   style={[
@@ -261,10 +263,15 @@ const handleSave = () => {
 
             setPhoneNumber(value);
 
-            if (phoneError) {
-              const error = /^\d{10}$/.test(value) ? '' : 'Enter a valid 10-digit mobile number.';
-              setPhoneError(error);
-            }
+            let error = '';
+
+if (value.length === 0) {
+  error = 'Phone number is required.';
+} else if (!/^\d{10}$/.test(value)) {
+  error = 'Enter a valid 10-digit mobile number.';
+}
+
+setPhoneError(error);
           }}
           placeholder="10 digit mobile number"
           keyboardType="number-pad"
@@ -288,10 +295,12 @@ const handleSave = () => {
                   onChangeText={text => {
                     setHouse(text);
 
-                    if (houseError) {
-                      const error = text.trim().length > 0 ? '' : 'House / Flat number is required.';
-                      setHouseError(error);
-                    }
+                    const error =
+  text.trim().length > 0
+    ? ''
+    : 'House / Flat number is required.';
+
+setHouseError(error);
                   }}
                   placeholder="Flat, House, Building"
                   style={[
@@ -313,10 +322,12 @@ const handleSave = () => {
                  onChangeText={text => {
                     setArea(text);
 
-                    if (areaError) {
-                      const error = text.trim().length > 0 ? '' : 'Area / Locality is required.';
-                      setAreaError(error);
-                    }
+                    const error =
+  text.trim().length > 0
+    ? ''
+    : 'Area / Locality is required.';
+
+setAreaError(error);
                   }}
                   placeholder="Area"
                   style={[
@@ -349,10 +360,12 @@ const handleSave = () => {
                   onChangeText={text => {
                     setCity(text);
 
-                    if (cityError) {
-                      const error = text.trim().length > 0 ? '' : 'City is required.';
-                      setCityError(error);
-                    }
+                    const error =
+  text.trim().length > 0
+    ? ''
+    : 'City is required.';
+
+setCityError(error);
                   }}
                   placeholder="City"
                   style={[
@@ -376,10 +389,15 @@ const handleSave = () => {
 
             setPinCode(value);
 
-            if (pinCodeError) {
-              const error = /^\d{6}$/.test(value) ? '' : 'Enter a valid 6-digit PIN code.';
-              setPinCodeError(error);
-            }
+            let error = '';
+
+if (value.length === 0) {
+  error = 'PIN code is required.';
+} else if (!/^\d{6}$/.test(value)) {
+  error = 'Enter a valid 6-digit PIN code.';
+}
+
+setPinCodeError(error);
           }}
           placeholder="6 digit PIN"
           keyboardType="number-pad"

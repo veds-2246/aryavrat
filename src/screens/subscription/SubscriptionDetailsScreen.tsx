@@ -82,16 +82,60 @@ const SubscriptionDetailsScreen: React.FC = () => {
   };
 
   const handleSkipTomorrow = () => {
-    if (subscription.nextDeliverySkipped) {
-      Alert.alert('Already skipped', 'Next delivery is already skipped.');
-      return;
-    }
+  if (isCancelled) {
+    return;
+  }
 
-    Alert.alert('Skip next delivery?', 'Your next scheduled milk delivery will be skipped.', [
-      {text: 'Keep Delivery', style: 'cancel'},
-      {text: 'Skip', onPress: () => setNextDeliverySkipped(subscription.id, true)},
-    ]);
-  };
+  if (isPaused) {
+    Alert.alert(
+      'Subscription Paused',
+      'Resume your subscription before skipping a delivery.',
+    );
+    return;
+  }
+
+  if (subscription.nextDeliverySkipped) {
+    Alert.alert(
+      'Restore Delivery?',
+      'Tomorrow\'s delivery will be restored.',
+      [
+        {
+          text: 'Keep Skipped',
+          style: 'cancel',
+        },
+        {
+          text: 'Restore',
+          onPress: () =>
+            setNextDeliverySkipped(
+              subscription.id,
+              false,
+            ),
+        },
+      ],
+    );
+
+    return;
+  }
+
+  Alert.alert(
+    'Skip Tomorrow?',
+    'Tomorrow\'s milk delivery will be skipped.',
+    [
+      {
+        text: 'Cancel',
+        style: 'cancel',
+      },
+      {
+        text: 'Skip',
+        onPress: () =>
+          setNextDeliverySkipped(
+            subscription.id,
+            true,
+          ),
+      },
+    ],
+  );
+};
 
   const handleChangeQuantity = () => {
     Alert.alert('Change quantity', 'Select the milk quantity for each delivery', [
@@ -119,7 +163,7 @@ const SubscriptionDetailsScreen: React.FC = () => {
         style: 'destructive',
         onPress: () => {
           updateSubscriptionStatus(subscription.id, 'cancelled');
-          navigation.goBack();
+
         },
       },
     ]);
@@ -176,7 +220,11 @@ const SubscriptionDetailsScreen: React.FC = () => {
 
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Next delivery</Text>
-            <Text style={styles.infoValue}>{subscription.nextDeliverySkipped ? 'Skipped' : subscription.startDate ?? 'Scheduled'}</Text>
+            <Text style={styles.infoValue}>
+  {subscription.nextDeliverySkipped
+    ? `${subscription.startDate ?? 'Tomorrow'} (Skipped)`
+    : subscription.startDate ?? 'Scheduled'}
+</Text>
           </View>
 
           <View style={styles.divider} />
@@ -203,7 +251,11 @@ const SubscriptionDetailsScreen: React.FC = () => {
               )}
 
               <Pressable style={styles.actionButton} onPress={handleSkipTomorrow}>
-                <Text style={styles.actionButtonText}>Skip Tomorrow</Text>
+                <Text style={styles.actionButtonText}>
+  {subscription.nextDeliverySkipped
+    ? 'Restore Tomorrow Delivery'
+    : 'Skip Tomorrow'}
+</Text>
               </Pressable>
 
               <Pressable style={styles.actionButton} onPress={handleChangeQuantity}>

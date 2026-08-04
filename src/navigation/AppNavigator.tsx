@@ -19,6 +19,7 @@ import ChangeSubscriptionScheduleScreen from '../screens/subscription/ChangeSubs
 import MainTabs from './MainTabs';
 import AddressesScreen from '../screens/profile/AddressesScreen';
 import AddEditAddressScreen from '../screens/profile/AddEditAddressScreen';
+import SubscriptionDetailsScreen from '../screens/subscription/SubscriptionDetailsScreen';
 import {RootStackParamList} from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -155,6 +156,14 @@ const AppNavigator = () => {
           component={AddEditAddressScreen}
           options={{
             title: 'Delivery Address',
+          }}
+        />
+
+        <Stack.Screen
+          name="SubscriptionDetails"
+          component={SubscriptionDetailsScreen}
+          options={{
+            animation: 'slide_from_right',
           }}
         />
 

@@ -10,7 +10,7 @@ import OrderStatusChip from './OrderStatusChip';
 
 type Props = {
   order: AppOrder;
-  onPress: (orderId: string) => void;
+  onPress: (order: AppOrder) => void;
 };
 
 const formatQuantity = (litres: number) => {
@@ -31,7 +31,7 @@ const OrderCard: React.FC<Props> = ({order, onPress}) => {
     <TouchableOpacity
       style={styles.card}
       activeOpacity={0.8}
-      onPress={() => onPress(order.id)}>
+      onPress={() => onPress(order)}>
 
       <View style={styles.header}>
 

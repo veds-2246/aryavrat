@@ -111,4 +111,8 @@ export type RootStackParamList = {
   AddEditAddress: {
     addressId?: string;
   };
+
+  SubscriptionDetails: {
+    subscriptionId: string;
+  };
 };

@@ -10,6 +10,8 @@ import {
   StyleSheet,
 } from 'react-native';
 
+import QuantitySelectorModal from '../../components/subscription/QuantitySelectorModal';
+
 import {useRoute, RouteProp, useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 
@@ -55,7 +57,8 @@ const SubscriptionDetailsScreen: React.FC = () => {
   const subscriptionStatus = subscription.subscriptionStatus ?? 'active';
   const isPaused = subscriptionStatus === 'paused';
   const isCancelled = subscriptionStatus === 'cancelled';
-
+  const [showQuantityModal, setShowQuantityModal] =
+  React.useState(false);
   const formatQuantity = (litres: number) => {
     if (litres === 0.5) return '500 ml';
     return `${litres} L`;
@@ -138,13 +141,21 @@ const SubscriptionDetailsScreen: React.FC = () => {
 };
 
   const handleChangeQuantity = () => {
-    Alert.alert('Change quantity', 'Select the milk quantity for each delivery', [
-      {text: '500 ml', onPress: () => updateOrderQuantity(subscription.id, 0.5)},
-      {text: '1 L', onPress: () => updateOrderQuantity(subscription.id, 1)},
-      {text: '1.5 L', onPress: () => updateOrderQuantity(subscription.id, 1.5)},
-      {text: 'Cancel', style: 'cancel'},
-    ]);
-  };
+  setShowQuantityModal(true);
+};
+
+const handleSaveQuantity = (
+  quantity: number,
+) => {
+
+  updateOrderQuantity(
+    subscription.id,
+    quantity,
+  );
+
+  setShowQuantityModal(false);
+
+};
 
   const handleChangeSchedule = () => {
     // Reuse existing ChangeSubscriptionScheduleScreen route.
@@ -277,6 +288,14 @@ const SubscriptionDetailsScreen: React.FC = () => {
           </>
         )}
       </ScrollView>
+      <QuantitySelectorModal
+  visible={showQuantityModal}
+  currentQuantity={subscription.quantity}
+  onClose={() =>
+    setShowQuantityModal(false)
+  }
+  onSave={handleSaveQuantity}
+/>
     </SafeAreaView>
   );
 };

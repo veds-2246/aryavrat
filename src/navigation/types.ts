@@ -49,7 +49,9 @@ export type RootStackParamList = {
     | 'tomorrow'
     | 'dayAfterTomorrow';
 
-  address: DeliveryAddress;
+  // Backwards compatible: previously we passed full address; new flow passes addressId
+  address?: DeliveryAddress;
+  addressId?: string;
   };
 
   CheckoutAddress: {
@@ -85,7 +87,9 @@ export type RootStackParamList = {
       | 'tomorrow'
       | 'dayAfterTomorrow';
 
-    address: DeliveryAddress;
+    // Backwards compatible: allow passing full address or an addressId
+    address?: DeliveryAddress;
+    addressId?: string;
   };
 
   Confirmation: {
@@ -100,19 +104,27 @@ export type RootStackParamList = {
   };
 
   ManageSubscription: {
-    SubscriptionId: string;
+    subscriptionId: string;
   };
-
+ 
   ChangeSubscriptionSchedule: {
-    SubscriptionId: string;
+    subscriptionId: string;
   };
 
-  Addresses: undefined;
+  Addresses: {
+  mode?: 'manage' | 'select';
+  selectedAddressId?: string;
+  returnScreen?: keyof RootStackParamList;
+  returnSubscriptionId?: string;
+} | undefined;
+
   AddEditAddress: {
     addressId?: string;
   };
 
   SubscriptionDetails: {
     subscriptionId: string;
+    // When an addressId is provided in params, screen should update subscription.addressId
+    addressId?: string;
   };
 };

@@ -137,7 +137,7 @@ const ProfileScreen = () => {
           <Pressable
   style={styles.menuItem}
   onPress={() =>
-    navigation.navigate('Addresses')
+    navigation.navigate('Addresses', {})
   }>
 
   <Text style={styles.menuText}>

@@ -39,6 +39,7 @@ const OrderReviewScreen = ({
     quantity,
     deliveryOption,
     address,
+    addressId,
   } = route.params;
   const {
   addOrder,
@@ -125,6 +126,7 @@ const OrderReviewScreen = ({
     status: 'confirmed',
     createdAt: new Date().toISOString(),
     deliveryDate,
+    addressId: addressId,
     pricePerDelivery: total,
   };
 
@@ -255,44 +257,21 @@ const OrderReviewScreen = ({
 
             <View style={styles.detailInfo}>
 
-              <Text
-                style={styles.addressName}>
-                {address.fullName}
-              </Text>
+              {address ? (
+                <>
+                  <Text style={styles.addressName}>{address.fullName}</Text>
 
-              <Text
-                style={styles.addressText}>
+                  <Text style={styles.addressText}>{address.house}, {address.area}</Text>
 
-                {address.house},
-                {' '}
-                {address.area}
+                  {address.landmark !== '' && (<Text style={styles.addressText}>Near {address.landmark}</Text>)}
 
-              </Text>
+                  <Text style={styles.addressText}>{address.city} - {address.pincode}</Text>
 
-              {address.landmark !== '' && (
-                <Text
-                  style={styles.addressText}>
-
-                  Near {address.landmark}
-
-                </Text>
+                  <Text style={styles.phone}>+91 {address.phone}</Text>
+                </>
+              ) : (
+                <Text style={styles.addressText}>No address selected</Text>
               )}
-
-              <Text
-                style={styles.addressText}>
-
-                {address.city}
-                {' - '}
-                {address.pincode}
-
-              </Text>
-
-              <Text
-                style={styles.phone}>
-
-                +91 {address.phone}
-
-              </Text>
 
             </View>
 

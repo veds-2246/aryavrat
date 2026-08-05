@@ -42,6 +42,9 @@ export type AppOrder = {
 
   nextDeliverySkipped?: boolean;
 
+  // Reference to an Address by id. Optional for backward compatibility.
+  addressId?: string;
+
   pricePerDelivery: number;
 
   estimatedMonthlyCost?: number;

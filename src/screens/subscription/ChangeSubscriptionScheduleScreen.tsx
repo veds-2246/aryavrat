@@ -42,6 +42,16 @@ const DAYS = [
   'Sun',
 ];
 
+const DAY_ORDER = [
+  'Mon',
+  'Tue',
+  'Wed',
+  'Thu',
+  'Fri',
+  'Sat',
+  'Sun',
+];
+
 const ChangeSubscriptionScheduleScreen = ({
   navigation,
   route,
@@ -69,6 +79,13 @@ const ChangeSubscriptionScheduleScreen = ({
   ] = useState<string[]>(
     subscription?.selectedDays ?? [],
   );
+
+  const hasChanges =
+  selectedSchedule !== subscription?.schedule ||
+  JSON.stringify(selectedDays) !==
+    JSON.stringify(
+      subscription?.selectedDays ?? [],
+    );
 
   if (
     !subscription ||
@@ -132,21 +149,35 @@ const ChangeSubscriptionScheduleScreen = ({
   const handleSave = () => {
     if (
       selectedSchedule === 'custom' &&
-      selectedDays.length === 0
+      selectedDays.length < 2
     ) {
       Alert.alert(
         'Select delivery days',
-        'Choose at least one day for your custom schedule.',
+        'Choose at least two days for your custom schedule.',
       );
 
       return;
     }
 
+    const noChanges =
+  subscription?.schedule === selectedSchedule &&
+  JSON.stringify(subscription?.selectedDays ?? []) ===
+    JSON.stringify(selectedDays);
+
+if (noChanges) {
+  navigation.goBack();
+  return;
+}
+
     updateSubscriptionSchedule(
       subscription.id,
       selectedSchedule,
       selectedSchedule === 'custom'
-        ? selectedDays
+        ? [...selectedDays].sort(
+  (a, b) =>
+    DAY_ORDER.indexOf(a) -
+    DAY_ORDER.indexOf(b),
+)
         : undefined,
     );
 
@@ -355,8 +386,13 @@ const ChangeSubscriptionScheduleScreen = ({
         </View>
 
         <Pressable
-          style={styles.saveButton}
-          onPress={handleSave}>
+  style={[
+    styles.saveButton,
+    !hasChanges &&
+      styles.disabledSaveButton,
+  ]}
+  disabled={!hasChanges}
+  onPress={handleSave}>
 
           <Text style={styles.saveButtonText}>
             Save Changes
@@ -570,6 +606,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 22,
   },
+
+  disabledSaveButton: {
+  backgroundColor: '#BFC8C2',
+},
 
   saveButtonText: {
     color: '#FFFFFF',

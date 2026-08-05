@@ -39,16 +39,16 @@ const OrdersScreen: React.FC = () => {
   }, [orders, filter]);
 
   const handlePress = (order: AppOrder) => {
-  if (order.type === 'subscription') {
-    navigation.navigate('SubscriptionDetails', {
-      orderId: order.id,
-    });
-  } else {
-    navigation.navigate('OrderDetails', {
-      orderId: order.id,
-    });
-  }
-};
+    if (order.type === 'subscription') {
+      navigation.navigate('SubscriptionDetails', {
+        subscriptionId: order.id,
+      });
+    } else {
+      navigation.navigate('OrderDetails', {
+        orderId: order.id,
+      });
+    }
+  };
   const handleContinue = () => {
     navigation.navigate('HomeTab' as never);
   };

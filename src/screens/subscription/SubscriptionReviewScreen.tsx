@@ -42,6 +42,7 @@ const SubscriptionReviewScreen = ({
     selectedDays,
     startOption,
     address,
+    addressId,
   } = route.params;
 
   const {
@@ -157,18 +158,20 @@ const SubscriptionReviewScreen = ({
 
     status: 'confirmed',
 
-subscriptionStatus: 'active',
+    subscriptionStatus: 'active',
 
-nextDeliverySkipped: false,
+    nextDeliverySkipped: false,
 
-createdAt:
-  new Date().toISOString(),
+    createdAt:
+      new Date().toISOString(),
 
-schedule,
+    schedule,
 
     selectedDays,
 
     startDate,
+
+    addressId: addressId,
 
     pricePerDelivery,
 
@@ -369,30 +372,21 @@ schedule,
 
             <View style={styles.addressInfo}>
 
-              <Text style={styles.addressName}>
-                {address.fullName}
-              </Text>
+              {address ? (
+                <>
+                  <Text style={styles.addressName}>{address.fullName}</Text>
 
-              <Text style={styles.addressText}>
-                {address.house},{' '}
-                {address.area}
-              </Text>
+                  <Text style={styles.addressText}>{address.house}, {address.area}</Text>
 
-              {address.landmark !== '' && (
-                <Text style={styles.addressText}>
-                  Near {address.landmark}
-                </Text>
+                  {address.landmark !== '' && (<Text style={styles.addressText}>Near {address.landmark}</Text>)}
+
+                  <Text style={styles.addressText}>{address.city} - {address.pincode}</Text>
+
+                  <Text style={styles.phone}>+91 {address.phone}</Text>
+                </>
+              ) : (
+                <Text style={styles.addressText}>No address selected</Text>
               )}
-
-              <Text style={styles.addressText}>
-                {address.city}
-                {' - '}
-                {address.pincode}
-              </Text>
-
-              <Text style={styles.phone}>
-                +91 {address.phone}
-              </Text>
 
             </View>
 

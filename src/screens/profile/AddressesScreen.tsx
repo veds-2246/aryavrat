@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 
 import {useAddresses} from '../../context/AddressContext';
+import { useOrders } from '../../context/OrderContext';
 
 import {
   useNavigation,
@@ -26,13 +27,39 @@ import {
 
 type AddressesScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Addresses'>;
 
+import {useRoute} from '@react-navigation/native';
+
 const AddressesScreen = () => {
   const navigation = useNavigation<AddressesScreenNavigationProp>();
+  const route = useRoute();
+  const params = (route.params ?? {}) as {
+  mode?: 'manage' | 'select';
+  selectedAddressId?: string;
+  returnScreen?: keyof RootStackParamList;
+  returnSubscriptionId?: string;
+};
+
   const {
     addresses,
     setDefaultAddress,
     deleteAddress,
   } = useAddresses();
+
+  // Order updater used only in selection mode to persist chosen address for a subscription
+  const { updateOrder } = useOrders();
+
+  const isSelectMode = params.mode === 'select';
+
+  // Local selection state so tapping a card highlights it immediately before navigation back.
+  const [selectedId, setSelectedId] = React.useState<string | undefined>(params.selectedAddressId);
+
+  const handleSelect = (id: string) => {
+  if (!isSelectMode) {
+    return;
+  }
+
+  setSelectedId(id);
+};
 
   return (
     <SafeAreaView style={styles.container}>
@@ -61,13 +88,16 @@ const AddressesScreen = () => {
             </View>
           }
           renderItem={({item}) => (
-            <View style={styles.card}>
+            <Pressable
+              onPress={() => (isSelectMode ? handleSelect(item.id) : undefined)}
+              style={item.id === selectedId && isSelectMode ? [styles.card, styles.selectedCard] : styles.card}
+            >
               <View style={styles.row}>
                 <Text style={styles.label}>
                   {item.label}
                 </Text>
 
-                {item.isDefault && (
+                {item.isDefault && !isSelectMode && (
                   <View style={styles.defaultBadge}>
                     <Text style={styles.defaultText}>
                       Default
@@ -102,64 +132,91 @@ const AddressesScreen = () => {
                 {item.phoneNumber}
               </Text>
 
-              <View style={styles.actions}>
+              {!isSelectMode && (
+                <View style={styles.actions}>
 
-                {!item.isDefault && (
+                  {!item.isDefault && (
+                    <Pressable
+                      onPress={() =>
+                        setDefaultAddress(item.id)
+                      }>
+                      <Text style={styles.action}>
+                        Set Default
+                      </Text>
+                    </Pressable>
+                  )}
+
                   <Pressable
                     onPress={() =>
-                      setDefaultAddress(item.id)
+                      navigation.navigate(
+                        'AddEditAddress',
+                        {
+                          addressId: item.id,
+                        },
+                      )
                     }>
+
                     <Text style={styles.action}>
-                      Set Default
+                      Edit
+                    </Text>
+
+                  </Pressable>
+
+                  <Pressable
+                    onPress={() =>
+                      deleteAddress(item.id)
+                    }>
+                    <Text
+                      style={[
+                        styles.action,
+                        styles.delete,
+                      ]}>
+                      Delete
                     </Text>
                   </Pressable>
-                )}
 
-                <Pressable
-  onPress={() =>
-    navigation.navigate(
-      'AddEditAddress',
-      {
-        addressId: item.id,
-      },
-    )
-  }>
-
-  <Text style={styles.action}>
-    Edit
-  </Text>
-
-</Pressable>
-
-                <Pressable
-                  onPress={() =>
-                    deleteAddress(item.id)
-                  }>
-                  <Text
-                    style={[
-                      styles.action,
-                      styles.delete,
-                    ]}>
-                    Delete
-                  </Text>
-                </Pressable>
-
-              </View>
-            </View>
+                </View>
+              )}
+            </Pressable>
           )}
         />
 
-        <Pressable
-  style={styles.addButton}
-  onPress={() =>
-    navigation.navigate('AddEditAddress', {},)
-  }>
+        {!isSelectMode && (
+          <Pressable
+            style={styles.addButton}
+            onPress={() =>
+            navigation.navigate('AddEditAddress', {})
+            }>
 
-  <Text style={styles.addText}>
-    + Add New Address
-  </Text>
+            <Text style={styles.addText}>
+              + Add New Address
+            </Text>
 
-</Pressable>
+          </Pressable>
+        )}
+
+        {isSelectMode && (
+          <Pressable
+            style={[
+              styles.addButton,
+              !selectedId && styles.disabledButton,
+            ]}
+            disabled={!selectedId}
+            onPress={() => {
+              // Update only the target subscription's addressId via OrderContext
+              // This keeps AddressesScreen generic while using OrderContext to apply business logic.
+              if (selectedId && params.returnSubscriptionId) {
+                updateOrder(params.returnSubscriptionId, { addressId: selectedId });
+              }
+
+              // Return to the existing SubscriptionDetails screen without navigating to a new instance
+              navigation.goBack();
+            }}>
+            <Text style={styles.addText}>
+              Use This Address
+            </Text>
+          </Pressable>
+        )}
 
       </View>
     </SafeAreaView>
@@ -226,6 +283,10 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 20,
   },
+  selectedCard: {
+    borderColor: '#16794B',
+    backgroundColor: '#EAF5EF',
+  },
 
   defaultText: {
     color: '#FFF',
@@ -271,6 +332,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+
+  disabledButton: {
+  backgroundColor: '#BFC8C2',
+},
 
   addText: {
     color: '#FFF',

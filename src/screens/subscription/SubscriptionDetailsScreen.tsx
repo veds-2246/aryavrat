@@ -16,18 +16,16 @@ import {useRoute, RouteProp, useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 
 import {useOrders} from '../../context/OrderContext';
+import {useAddresses} from '../../context/AddressContext';
 import {RootStackParamList} from '../../navigation/types';
 
-type RouteParams = RouteProp<
-  {SubscriptionDetails: {orderId: string}},
-  'SubscriptionDetails'
->;
+type RouteParams = RouteProp<RootStackParamList, 'SubscriptionDetails'>;
 
 const SubscriptionDetailsScreen: React.FC = () => {
   const route = useRoute<RouteParams>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
-  const {orderId} = route.params;
+  const {subscriptionId} = route.params;
 
   const {
     getOrderById,
@@ -35,9 +33,10 @@ const SubscriptionDetailsScreen: React.FC = () => {
     updateOrderQuantity,
     setNextDeliverySkipped,
     updateSubscriptionSchedule,
+    updateOrder,
   } = useOrders();
 
-  const subscription = getOrderById(orderId);
+  const subscription = getOrderById(subscriptionId);
 
   if (!subscription || subscription.type !== 'subscription') {
     return (
@@ -57,8 +56,21 @@ const SubscriptionDetailsScreen: React.FC = () => {
   const subscriptionStatus = subscription.subscriptionStatus ?? 'active';
   const isPaused = subscriptionStatus === 'paused';
   const isCancelled = subscriptionStatus === 'cancelled';
+
+  const { getAddressById } = useAddresses();
+
   const [showQuantityModal, setShowQuantityModal] =
-  React.useState(false);
+    React.useState(false);
+
+  // If navigation returned an addressId param, persist it on the subscription
+  React.useEffect(() => {
+    const returnedAddressId = (route.params && route.params.addressId) ? route.params.addressId : undefined;
+
+    if (returnedAddressId && returnedAddressId !== subscription.addressId) {
+      // Update subscription to reference this addressId only
+      updateOrder(subscription.id, { addressId: returnedAddressId });
+    }
+  }, [route.params?.addressId]);
   const formatQuantity = (litres: number) => {
     if (litres === 0.5) return '500 ml';
     return `${litres} L`;
@@ -163,8 +175,13 @@ const handleSaveQuantity = (
   };
 
   const handleChangeAddress = () => {
-    navigation.navigate('Addresses');
-  };
+      navigation.navigate('Addresses', {
+        mode: 'select',
+        selectedAddressId: subscription.addressId,
+        returnScreen: 'SubscriptionDetails',
+        returnSubscriptionId: subscription.id,
+      });
+    };
 
   const handleCancel = () => {
     Alert.alert('Cancel subscription?', 'This will stop all future deliveries under this subscription.', [
@@ -240,9 +257,40 @@ const handleSaveQuantity = (
 
           <View style={styles.divider} />
 
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Delivery address</Text>
-            <Text style={styles.infoValue}>No address set</Text>
+          <View style={styles.deliverySection}>
+            <Text style={styles.deliveryTitle}>Delivery Address</Text>
+
+            {subscription.addressId ? (
+              (() => {
+                const addr = getAddressById(subscription.addressId);
+                if (!addr) {
+                  return <Text style={styles.infoValue}>No address found</Text>;
+                }
+
+                return (
+                  <View style={styles.addressCard}>
+                    <View style={styles.badge}>
+                      <Text style={styles.badgeText}>{addr.label}</Text>
+                    </View>
+
+                    <Text style={styles.addressName}>{addr.fullName}</Text>
+
+                    <Text style={styles.addressLine}>{addr.house}</Text>
+                    <Text style={styles.addressLine}>{addr.area}</Text>
+                    {addr.landmark ? <Text style={styles.addressLine}>{addr.landmark}</Text> : null}
+
+                    <Text style={styles.addressLine}>{addr.city} - {addr.pinCode}</Text>
+
+                    <View style={styles.phoneRow}>
+                      <Text style={styles.phoneIcon}>📞</Text>
+                      <Text style={styles.phoneText}>{addr.phoneNumber}</Text>
+                    </View>
+                  </View>
+                );
+              })()
+            ) : (
+              <Text style={styles.infoValue}>No delivery address selected.</Text>
+            )}
           </View>
         </View>
 
@@ -343,4 +391,19 @@ const styles = StyleSheet.create({
   notFoundTitle: {color: '#17231C', fontSize: 20, fontWeight: '800', marginTop: 15},
   backHomeButton: {backgroundColor: '#16794B', borderRadius: 10, paddingHorizontal: 25, paddingVertical: 13, marginTop: 20},
   backHomeText: {color: '#FFFFFF', fontWeight: '700'},
+  addressBlock: {flex: 1},
+  address: {color: '#35433A', fontSize: 13, marginTop: 4},
+  phone: {color: '#25352B', fontSize: 13, marginTop: 6, fontWeight: '700'},
+
+  /* New delivery address card styles */
+  deliverySection: {marginTop: 12},
+  deliveryTitle: {color: '#7C8880', fontSize: 11, marginBottom: 8},
+  addressCard: {backgroundColor: '#FFFFFF', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#E3EAE6'},
+  badge: {alignSelf: 'flex-start', backgroundColor: '#EAF5EF', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12},
+  badgeText: {color: '#16794B', fontSize: 12, fontWeight: '800'},
+  addressName: {fontSize: 16, fontWeight: '700', color: '#17231C', marginTop: 8},
+  addressLine: {color: '#35433A', fontSize: 13, marginTop: 6},
+  phoneRow: {flexDirection: 'row', alignItems: 'center', marginTop: 8},
+  phoneIcon: {marginRight: 8, fontSize: 14},
+  phoneText: {color: '#25352B', fontSize: 13, fontWeight: '700'},
 });

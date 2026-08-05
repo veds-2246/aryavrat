@@ -18,6 +18,8 @@ import {
   MainTabParamList,
 } from '../../navigation/MainTabs';
 
+type Props = BottomTabScreenProps<MainTabParamList, 'HomeTab'>;
+
 const HomeScreen = ({navigation}: Props) => {
   return (
     <SafeAreaView style={styles.container}>
@@ -180,16 +182,7 @@ const HomeScreen = ({navigation}: Props) => {
 
           <Pressable
   style={styles.addButton}
-  onPress={() =>
-    navigation
-      .getParent()
-      ?.navigate(
-        'ProductDetails' as never,
-        {
-          productId: 'cow-milk',
-        } as never,
-      )
-  }>
+  onPress={() => navigation.navigate('Products')}>
   <Text style={styles.addText}>
     ADD
   </Text>

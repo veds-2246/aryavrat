@@ -40,9 +40,34 @@ export const NotificationProvider = ({
   children: ReactNode;
 }) => {
   const [
-    notifications,
-    setNotifications,
-  ] = useState<AppNotification[]>([]);
+  notifications,
+  setNotifications,
+] = useState<AppNotification[]>([
+  {
+    id: '1',
+    title: '🥛 Subscription Created',
+    message: 'Your daily milk subscription has been created successfully.',
+    type: 'subscription',
+    createdAt: 'Today, 8:30 AM',
+    isRead: false,
+  },
+  {
+    id: '2',
+    title: '📍 Address Updated',
+    message: 'Your delivery address has been updated successfully.',
+    type: 'address',
+    createdAt: 'Yesterday',
+    isRead: false,
+  },
+  {
+    id: '3',
+    title: '📦 Order Confirmed',
+    message: 'Your Buy Once order has been confirmed.',
+    type: 'order',
+    createdAt: '2 days ago',
+    isRead: true,
+  },
+]);
 
   const addNotification = (
     notification: AppNotification,

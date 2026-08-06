@@ -176,6 +176,22 @@ const ProfileScreen = () => {
 
           </Pressable>
 
+          <Pressable
+  style={styles.menuItem}
+  onPress={() =>
+    navigation.navigate('Notifications')
+  }>
+
+  <Text style={styles.menuText}>
+    🔔 Notifications
+  </Text>
+
+  <Text style={styles.chevron}>
+    ›
+  </Text>
+
+</Pressable>
+
               <Pressable
   style={[
     styles.menuItem,

@@ -5,6 +5,10 @@ import {
 } from '../../context/OrderContext';
 
 import {
+  useNotifications, 
+} from '../../context/NotificationContext';
+
+import {
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -48,6 +52,10 @@ const SubscriptionReviewScreen = ({
   const {
   addOrder,
 } = useOrders();
+
+const {
+  addNotification,
+} = useNotifications();
 
   const product = getProduct(productId);
 
@@ -177,6 +185,15 @@ const SubscriptionReviewScreen = ({
 
     estimatedMonthlyCost,
   });
+
+  addNotification({
+  id: Date.now().toString(),
+  title: '🥛 Subscription Created',
+  message: `${quantity} L ${product.name} subscription has been created successfully.`,
+  type: 'subscription',
+  createdAt: new Date().toLocaleString(),
+  isRead: false,
+});
 
   navigation.navigate(
     'Confirmation',

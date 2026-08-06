@@ -1,4 +1,4 @@
-import React, {useMemo, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 
 import {
   SafeAreaView,
@@ -10,7 +10,7 @@ import {
   ListRenderItemInfo,
 } from 'react-native';
 
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, useRoute, } from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 
 import {RootStackParamList} from '../../navigation/types';
@@ -30,8 +30,18 @@ const OrdersScreen: React.FC = () => {
 
   const {orders, isHydrated} = useOrders();
 
-  const [filter, setFilter] = useState<Filter>('all');
+const route = useRoute();
 
+const initialFilter =
+  (route.params as
+    | {initialFilter?: Filter}
+    | undefined)?.initialFilter ?? 'all';
+
+const [filter, setFilter] =
+  useState<Filter>(initialFilter);
+useEffect(() => {
+  setFilter(initialFilter);
+}, [initialFilter]);
   const filtered = useMemo(() => {
     if (filter === 'all') return orders;
     if (filter === 'buyOnce') return orders.filter(o => o.type === 'buyOnce');

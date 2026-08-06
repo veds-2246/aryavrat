@@ -153,44 +153,45 @@ const ProfileScreen = () => {
           <Pressable
             style={styles.menuItem}>
 
-            <Text style={styles.menuText}>
-              📅  My Subscriptions
-            </Text>
+  <Text style={styles.menuText}>
+    🥛 My Subscriptions
+  </Text>
 
-            <Text style={styles.chevron}>
-              ›
-            </Text>
+  <Text style={styles.chevron}>
+    ›
+  </Text>
 
           </Pressable>
 
           <Pressable
             style={styles.menuItem}>
 
-            <Text style={styles.menuText}>
-              📦  Order History
-            </Text>
+  <Text style={styles.menuText}>
+    📦 My Orders
+  </Text>
 
-            <Text style={styles.chevron}>
-              ›
-            </Text>
-
-          </Pressable>
-
-          <Pressable
-            style={[
-              styles.menuItem,
-              styles.lastMenuItem,
-            ]}>
-
-            <Text style={styles.menuText}>
-              ❓  Help & Support
-            </Text>
-
-            <Text style={styles.chevron}>
-              ›
-            </Text>
+  <Text style={styles.chevron}>
+    ›
+  </Text>
 
           </Pressable>
+
+              <Pressable
+  style={[
+    styles.menuItem,
+    styles.lastMenuItem,
+  ]}
+  onPress={() => navigation.navigate('HelpSupport')}>
+
+  <Text style={styles.menuText}>
+    ❓ Help & Support
+  </Text>
+
+  <Text style={styles.chevron}>
+    ›
+  </Text>
+
+</Pressable>
 
         </View>
 

@@ -122,6 +122,8 @@ export type RootStackParamList = {
     addressId?: string;
   };
 
+  HelpSupport: undefined;
+
   SubscriptionDetails: {
     subscriptionId: string;
     // When an addressId is provided in params, screen should update subscription.addressId

@@ -15,12 +15,18 @@ import {
   AddressProvider,
 } from './src/context/AddressContext';
 
+import {
+  NotificationProvider,
+} from './src/context/NotificationContext';
+
 const App = () => {
   return (
     <AuthProvider>
       <OrderProvider>
         <AddressProvider>
-          <AppNavigator />
+          <NotificationProvider>
+            <AppNavigator />
+          </NotificationProvider>
         </AddressProvider>
       </OrderProvider>
     </AuthProvider>

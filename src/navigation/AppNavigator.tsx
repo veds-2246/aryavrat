@@ -21,6 +21,11 @@ import AddressesScreen from '../screens/profile/AddressesScreen';
 import AddEditAddressScreen from '../screens/profile/AddEditAddressScreen';
 import SubscriptionDetailsScreen from '../screens/subscription/SubscriptionDetailsScreen';
 import HelpSupportScreen from '../screens/profile/HelpSupportScreen';
+import NotificationsScreen from '../screens/profile/NotificationsScreen';
+
+
+
+
 import {RootStackParamList} from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -171,6 +176,14 @@ const AppNavigator = () => {
         <Stack.Screen
   name="HelpSupport"
   component={HelpSupportScreen}
+  options={{
+    animation: 'slide_from_right',
+  }}
+/>
+
+        <Stack.Screen
+  name="Notifications"
+  component={NotificationsScreen}
   options={{
     animation: 'slide_from_right',
   }}

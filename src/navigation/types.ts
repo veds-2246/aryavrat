@@ -129,4 +129,6 @@ export type RootStackParamList = {
     // When an addressId is provided in params, screen should update subscription.addressId
     addressId?: string;
   };
+
+  Notifications: undefined;
 };

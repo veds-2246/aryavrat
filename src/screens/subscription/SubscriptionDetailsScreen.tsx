@@ -184,18 +184,27 @@ const handleSaveQuantity = (
     };
 
   const handleCancel = () => {
-    Alert.alert('Cancel subscription?', 'This will stop all future deliveries under this subscription.', [
-      {text: 'Keep Subscription', style: 'cancel'},
+  Alert.alert(
+    'Cancel Subscription',
+    'Are you sure you want to cancel this milk subscription?\n\nFuture deliveries will stop immediately.',
+    [
+      {
+        text: 'Keep Subscription',
+        style: 'cancel',
+      },
       {
         text: 'Cancel Subscription',
         style: 'destructive',
         onPress: () => {
-          updateSubscriptionStatus(subscription.id, 'cancelled');
-
+          updateSubscriptionStatus(
+            subscription.id,
+            'cancelled',
+          );
         },
       },
-    ]);
-  };
+    ],
+  );
+};
 
   return (
     <SafeAreaView style={styles.container}>
@@ -294,8 +303,21 @@ const handleSaveQuantity = (
           </View>
         </View>
 
-        {!isCancelled && (
-          <>
+        {isCancelled && (
+  <View style={styles.cancelledContainer}>
+    <Text style={styles.cancelledTitle}>
+      Subscription Cancelled
+    </Text>
+
+    <Text style={styles.cancelledMessage}>
+      This subscription has been cancelled.
+      You can create a new subscription anytime from the Products screen.
+    </Text>
+  </View>
+)}
+
+{!isCancelled && (
+  <>
             <Text style={styles.sectionTitle}>Actions</Text>
 
             <View style={styles.actionsContainer}>
@@ -406,4 +428,26 @@ const styles = StyleSheet.create({
   phoneRow: {flexDirection: 'row', alignItems: 'center', marginTop: 8},
   phoneIcon: {marginRight: 8, fontSize: 14},
   phoneText: {color: '#25352B', fontSize: 13, fontWeight: '700'},
+
+  cancelledContainer: {
+  marginTop: 24,
+  backgroundColor: '#FDECEC',
+  borderRadius: 12,
+  padding: 18,
+},
+
+cancelledTitle: {
+  color: '#B54545',
+  fontSize: 16,
+  fontWeight: '700',
+},
+
+cancelledMessage: {
+  color: '#6B6B6B',
+  fontSize: 14,
+  lineHeight: 22,
+  marginTop: 8,
+},
+
+
 });

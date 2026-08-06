@@ -207,6 +207,8 @@ const handleEditAddress = (
             route.params.startOption,
 
           address,
+
+          addressId: selectedAddress.id,
         },
       );
 

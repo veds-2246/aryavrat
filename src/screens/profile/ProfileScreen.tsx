@@ -11,12 +11,18 @@ import {
 } from 'react-native';
 
 import {
+  CompositeNavigationProp,
   useNavigation,
 } from '@react-navigation/native';
 
+import {BottomTabNavigationProp} from '@react-navigation/bottom-tabs';
 import {
   NativeStackNavigationProp,
 } from '@react-navigation/native-stack';
+
+import {
+  MainTabParamList,
+} from '../../navigation/MainTabs';
 
 import {
   RootStackParamList,
@@ -31,13 +37,25 @@ import {
 } from '../../context/NotificationContext';
 
 type NavigationProp =
-  NativeStackNavigationProp<
-    RootStackParamList
+  CompositeNavigationProp<
+    BottomTabNavigationProp<
+      MainTabParamList,
+      'Profile'
+    >,
+    NativeStackNavigationProp<
+      RootStackParamList
+    >
   >;
 
 const ProfileScreen = () => {
   const navigation =
     useNavigation<NavigationProp>();
+  const stackNavigation =
+    navigation.getParent<
+      NativeStackNavigationProp<
+        RootStackParamList
+      >
+    >();
 
   const {
     phoneNumber,
@@ -85,14 +103,18 @@ const ProfileScreen = () => {
        * Remove all authenticated screens
        * from the navigation history.
        */
-      navigation.reset({
-        index: 0,
-        routes: [
-          {
-            name: 'Login',
-          },
-        ],
-      });
+      if (stackNavigation) {
+        stackNavigation.reset({
+          index: 0,
+          routes: [
+            {
+              name: 'Login',
+            },
+          ],
+        });
+      } else {
+        navigation.navigate('Login');
+      }
     } catch (error) {
       console.error(
         'Failed to logout:',
@@ -163,7 +185,12 @@ const ProfileScreen = () => {
 </Pressable>
 
           <Pressable
-            style={styles.menuItem}>
+            style={styles.menuItem}
+            onPress={() =>
+              navigation.navigate('Orders', {
+                initialFilter: 'subscription',
+              })
+            }>
 
   <Text style={styles.menuText}>
     🥛 My Subscriptions
@@ -176,7 +203,12 @@ const ProfileScreen = () => {
           </Pressable>
 
           <Pressable
-            style={styles.menuItem}>
+            style={styles.menuItem}
+            onPress={() =>
+              navigation.navigate('Orders', {
+                initialFilter: 'buyOnce',
+              })
+            }>
 
   <Text style={styles.menuText}>
     📦 My Orders

@@ -13,7 +13,11 @@ import ProfileScreen from '../screens/profile/ProfileScreen';
 export type MainTabParamList = {
   HomeTab: undefined;
   Products: undefined;
-  Orders: undefined;
+  Orders:
+    | {
+        initialFilter?: 'all' | 'buyOnce' | 'subscription';
+      }
+    | undefined;
   Profile: undefined;
 };
 

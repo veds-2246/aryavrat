@@ -10,10 +10,12 @@ import {
   ListRenderItemInfo,
 } from 'react-native';
 
-import {useNavigation, useRoute, } from '@react-navigation/native';
+import {useNavigation, useRoute, RouteProp, CompositeNavigationProp} from '@react-navigation/native';
+import {BottomTabNavigationProp} from '@react-navigation/bottom-tabs';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 
 import {RootStackParamList} from '../../navigation/types';
+import {MainTabParamList} from '../../navigation/MainTabs';
 import {useOrders} from '../../context/OrderContext';
 import {AppOrder} from '../../types/orders';
 
@@ -23,25 +25,34 @@ import EmptyOrders from './EmptyOrders';
 
 type Filter = 'all' | 'buyOnce' | 'subscription';
 
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+type NavigationProp = CompositeNavigationProp<
+  BottomTabNavigationProp<MainTabParamList, 'Orders'>,
+  NativeStackNavigationProp<RootStackParamList>
+>;
+type OrdersRouteProp = RouteProp<MainTabParamList, 'Orders'>;
 
 const OrdersScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<OrdersRouteProp>();
 
   const {orders, isHydrated} = useOrders();
 
-const route = useRoute();
+  const [filter, setFilter] =
+    useState<Filter>('all');
 
-const initialFilter =
-  (route.params as
-    | {initialFilter?: Filter}
-    | undefined)?.initialFilter ?? 'all';
+  const requestedFilter =
+    route.params?.initialFilter;
 
-const [filter, setFilter] =
-  useState<Filter>(initialFilter);
-useEffect(() => {
-  setFilter(initialFilter);
-}, [initialFilter]);
+  useEffect(() => {
+    if (!requestedFilter) {
+      return;
+    }
+
+    setFilter(requestedFilter);
+    navigation.setParams({
+      initialFilter: undefined,
+    });
+  }, [requestedFilter, navigation]);
   const filtered = useMemo(() => {
     if (filter === 'all') return orders;
     if (filter === 'buyOnce') return orders.filter(o => o.type === 'buyOnce');

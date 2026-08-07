@@ -73,3 +73,26 @@ yarn-error.log
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# Python
+backend/.pytest_cache/
+backend/.mypy_cache/
+backend/.coverage
+
+# Environment
+.env
+*.env
+
+# IDE
+.idea/
+.vscode/
+
+# Logs
+*.log
+
+# Python Virtual Environment
+backend/venv/
+
+# Python Cache
+**/__pycache__/
+*.py[cod]

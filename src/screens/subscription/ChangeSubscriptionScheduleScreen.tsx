@@ -27,6 +27,10 @@ import {
   SubscriptionSchedule,
 } from '../../types/orders';
 
+import {
+  useNotifications,
+} from '../../context/NotificationContext';
+
 type Props = NativeStackScreenProps<
   RootStackParamList,
   'ChangeSubscriptionSchedule'
@@ -60,6 +64,8 @@ const ChangeSubscriptionScheduleScreen = ({
     getOrderById,
     updateSubscriptionSchedule,
   } = useOrders();
+
+  const { addNotification } = useNotifications();
 
   const subscription =
     getOrderById(
@@ -180,6 +186,16 @@ if (noChanges) {
 )
         : undefined,
     );
+
+
+    addNotification({
+  id: Date.now().toString(),
+  title: '📅 Delivery Schedule Updated',
+  message: `${subscription.productName} delivery schedule has been updated.`,
+  type: 'subscription',
+  createdAt: new Date().toLocaleString(),
+  isRead: false,
+});
 
     navigation.goBack();
   };

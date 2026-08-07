@@ -18,6 +18,9 @@ import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useOrders} from '../../context/OrderContext';
 import {useAddresses} from '../../context/AddressContext';
 import {RootStackParamList} from '../../navigation/types';
+import {
+  useNotifications,
+} from '../../context/NotificationContext';
 
 type RouteParams = RouteProp<RootStackParamList, 'SubscriptionDetails'>;
 
@@ -35,6 +38,10 @@ const SubscriptionDetailsScreen: React.FC = () => {
     updateSubscriptionSchedule,
     updateOrder,
   } = useOrders();
+
+  const {
+  addNotification,
+} = useNotifications();
 
   const subscription = getOrderById(subscriptionId);
 
@@ -66,11 +73,20 @@ const SubscriptionDetailsScreen: React.FC = () => {
   React.useEffect(() => {
     const returnedAddressId = (route.params && route.params.addressId) ? route.params.addressId : undefined;
 
-    if (returnedAddressId && returnedAddressId !== subscription.addressId) {
-      // Update subscription to reference this addressId only
-      updateOrder(subscription.id, { addressId: returnedAddressId });
-    }
+    if (
+  returnedAddressId &&
+  returnedAddressId !== subscription.addressId
+) {
+
+  updateOrder(
+    subscription.id,
+    {
+      addressId: returnedAddressId,
+    },
+  );
+}
   }, [route.params?.addressId]);
+
   const formatQuantity = (litres: number) => {
     if (litres === 0.5) return '500 ml';
     return `${litres} L`;
@@ -82,20 +98,76 @@ const SubscriptionDetailsScreen: React.FC = () => {
   };
 
   const handlePauseResume = () => {
-    if (isPaused) {
-      Alert.alert('Resume subscription?', 'Your scheduled milk deliveries will resume.', [
-        {text: 'Not Now', style: 'cancel'},
-        {text: 'Resume', onPress: () => updateSubscriptionStatus(subscription.id, 'active')},
-      ]);
-      return;
-    }
 
-    Alert.alert('Pause subscription?', 'Upcoming deliveries will be paused until you resume the subscription.', [
-      {text: 'Keep Active', style: 'cancel'},
-      {text: 'Pause', onPress: () => updateSubscriptionStatus(subscription.id, 'paused')},
-    ]);
-  };
+  if (isPaused) {
 
+    Alert.alert(
+      'Resume subscription?',
+      'Your scheduled milk deliveries will resume.',
+      [
+        {
+          text: 'Not Now',
+          style: 'cancel',
+        },
+        {
+          text: 'Resume',
+          onPress: () => {
+
+            updateSubscriptionStatus(
+              subscription.id,
+              'active',
+            );
+
+            addNotification({
+              id: Date.now().toString(),
+              title: '▶ Subscription Resumed',
+              message: `${subscription.productName} subscription resumed.`,
+              type: 'subscription',
+              createdAt: new Date().toLocaleString(),
+              isRead: false,
+            });
+
+          },
+        },
+      ],
+    );
+
+    return;
+  }
+
+  Alert.alert(
+    'Pause subscription?',
+    'Upcoming deliveries will be paused until you resume the subscription.',
+    [
+      {
+        text: 'Keep Active',
+        style: 'cancel',
+      },
+      {
+        text: 'Pause',
+        onPress: () => {
+
+          updateSubscriptionStatus(
+            subscription.id,
+            'paused',
+          );
+
+          addNotification({
+            id: Date.now().toString(),
+            title: '⏸ Subscription Paused',
+            message: `${subscription.productName} subscription paused.`,
+            type: 'subscription',
+            createdAt: new Date().toLocaleString(),
+            isRead: false,
+          });
+
+        },
+      },
+    ],
+  );
+
+};
+  
   const handleSkipTomorrow = () => {
   if (isCancelled) {
     return;
@@ -119,13 +191,25 @@ const SubscriptionDetailsScreen: React.FC = () => {
           style: 'cancel',
         },
         {
-          text: 'Restore',
-          onPress: () =>
-            setNextDeliverySkipped(
-              subscription.id,
-              false,
-            ),
-        },
+  text: 'Restore',
+  onPress: () => {
+
+    setNextDeliverySkipped(
+      subscription.id,
+      false,
+    );
+
+    addNotification({
+      id: Date.now().toString(),
+      title: '↩ Tomorrow Delivery Restored',
+      message: `${subscription.productName} delivery has been restored.`,
+      type: 'subscription',
+      createdAt: new Date().toLocaleString(),
+      isRead: false,
+    });
+
+  },
+},
       ],
     );
 
@@ -141,13 +225,25 @@ const SubscriptionDetailsScreen: React.FC = () => {
         style: 'cancel',
       },
       {
-        text: 'Skip',
-        onPress: () =>
-          setNextDeliverySkipped(
-            subscription.id,
-            true,
-          ),
-      },
+  text: 'Skip',
+  onPress: () => {
+
+    setNextDeliverySkipped(
+      subscription.id,
+      true,
+    );
+
+    addNotification({
+      id: Date.now().toString(),
+      title: '⏭ Tomorrow Delivery Skipped',
+      message: `${subscription.productName} delivery has been skipped for tomorrow.`,
+      type: 'subscription',
+      createdAt: new Date().toLocaleString(),
+      isRead: false,
+    });
+
+  },
+},
     ],
   );
 };
@@ -165,13 +261,29 @@ const handleSaveQuantity = (
     quantity,
   );
 
+  const { addNotification } = useNotifications();
+
+  addNotification({
+    id: Date.now().toString(),
+    title: '⚖ Quantity Updated',
+    message: `${subscription.productName} quantity changed to ${formatQuantity(quantity)}.`,
+    type: 'subscription',
+    createdAt: new Date().toLocaleString(),
+    isRead: false,
+  });
+
   setShowQuantityModal(false);
 
 };
 
   const handleChangeSchedule = () => {
     // Reuse existing ChangeSubscriptionScheduleScreen route.
-    navigation.navigate('ChangeSubscriptionSchedule', {subscriptionId: subscription.id});
+    navigation.navigate(
+      'ChangeSubscriptionSchedule',
+       {
+        subscriptionId: subscription.id
+      }
+    );
   };
 
   const handleChangeAddress = () => {
@@ -200,6 +312,16 @@ const handleSaveQuantity = (
             subscription.id,
             'cancelled',
           );
+
+          addNotification({
+  id: Date.now().toString(),
+  title: '❌ Subscription Cancelled',
+  message: `${subscription.productName} subscription has been cancelled.`,
+  type: 'subscription',
+  createdAt: new Date().toLocaleString(),
+  isRead: false,
+});
+
         },
       },
     ],

@@ -25,6 +25,10 @@ import {
   RootStackParamList,
 } from '../../navigation/types';
 
+import {
+  useNotifications,
+} from '../../context/NotificationContext';
+
 type AddressesScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Addresses'>;
 
 import {useRoute} from '@react-navigation/native';
@@ -47,6 +51,10 @@ const AddressesScreen = () => {
 
   // Order updater used only in selection mode to persist chosen address for a subscription
   const { updateOrder } = useOrders();
+
+  const {
+  addNotification,
+} = useNotifications();
 
   const isSelectMode = params.mode === 'select';
 
@@ -206,11 +214,33 @@ const AddressesScreen = () => {
               // Update only the target subscription's addressId via OrderContext
               // This keeps AddressesScreen generic while using OrderContext to apply business logic.
               if (selectedId && params.returnSubscriptionId) {
-                updateOrder(params.returnSubscriptionId, { addressId: selectedId });
-              }
 
-              // Return to the existing SubscriptionDetails screen without navigating to a new instance
-              navigation.goBack();
+  updateOrder(
+    params.returnSubscriptionId,
+    {
+      addressId: selectedId,
+    },
+  );
+
+  const address =
+    addresses.find(
+      a => a.id === selectedId,
+    );
+
+  addNotification({
+    id: Date.now().toString(),
+    title: '📍 Delivery Address Updated',
+    message: address
+      ? `Delivery address changed to ${address.label}.`
+      : 'Delivery address updated.',
+    type: 'address',
+    createdAt: new Date().toLocaleString(),
+    isRead: false,
+  });
+
+}
+
+navigation.goBack();
             }}>
             <Text style={styles.addText}>
               Use This Address

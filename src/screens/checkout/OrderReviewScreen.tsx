@@ -24,6 +24,10 @@ import {
   getProduct,
 } from '../../data/products';
 
+import {
+  useNotifications,
+} from '../../context/NotificationContext';
+
 type Props = NativeStackScreenProps<
   RootStackParamList,
   'OrderReview'
@@ -44,6 +48,11 @@ const OrderReviewScreen = ({
   const {
   addOrder,
 } = useOrders();
+
+const {
+  addNotification,
+} = useNotifications();
+
   const product = getProduct(productId);
 
   if (!product) {
@@ -131,6 +140,15 @@ const OrderReviewScreen = ({
   };
 
   addOrder(order);
+
+  addNotification({
+  id: Date.now().toString(),
+  title: '📦 Order Confirmed',
+  message: `${quantity} L ${product.name} order placed successfully.`,
+  type: 'order',
+  createdAt: new Date().toLocaleString(),
+  isRead: false,
+});
 
   navigation.navigate('Confirmation', {
     type: 'buyOnce',

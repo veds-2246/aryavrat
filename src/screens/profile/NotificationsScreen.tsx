@@ -19,8 +19,20 @@ const NotificationsScreen = () => {
   const {
     notifications,
     markAsRead,
+    markAllAsRead,
     deleteNotification,
+    clearNotifications,
   } = useNotifications();
+
+  React.useEffect(() => {
+  if (
+    notifications.some(
+      notification => !notification.isRead,
+    )
+  ) {
+    markAllAsRead();
+  }
+}, [notifications]);
 
   return (
     <SafeAreaView style={styles.container}>

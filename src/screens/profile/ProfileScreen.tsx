@@ -26,6 +26,10 @@ import {
   useAuth,
 } from '../../context/AuthContext';
 
+import {
+  useNotifications,
+} from '../../context/NotificationContext';
+
 type NavigationProp =
   NativeStackNavigationProp<
     RootStackParamList
@@ -39,6 +43,14 @@ const ProfileScreen = () => {
     phoneNumber,
     logout,
   } = useAuth();
+
+  const {
+    notifications,
+  } = useNotifications();
+
+  const unreadCount = notifications.filter(
+  notification => !notification.isRead,
+).length;
 
   const [
     showLogoutModal,
@@ -182,9 +194,44 @@ const ProfileScreen = () => {
     navigation.navigate('Notifications')
   }>
 
-  <Text style={styles.menuText}>
-    🔔 Notifications
-  </Text>
+  <View
+    style={{
+      flexDirection: 'row',
+      alignItems: 'center',
+    }}>
+
+    <Text style={styles.menuText}>
+      🔔 Notifications
+    </Text>
+
+    {unreadCount > 0 && (
+      <View
+        style={{
+          marginLeft: 10,
+          backgroundColor: '#E53935',
+          minWidth: 20,
+          height: 20,
+          borderRadius: 10,
+          justifyContent: 'center',
+          alignItems: 'center',
+          paddingHorizontal: 5,
+        }}>
+
+        <Text
+          style={{
+            color: '#FFFFFF',
+            fontSize: 11,
+            fontWeight: '700',
+          }}>
+
+          {unreadCount}
+
+        </Text>
+
+      </View>
+    )}
+
+  </View>
 
   <Text style={styles.chevron}>
     ›

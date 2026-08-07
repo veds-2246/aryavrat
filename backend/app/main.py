@@ -1,8 +1,8 @@
 from fastapi import FastAPI
+from app.database.mongodb import database
 
 app = FastAPI(
     title="Aryavrat Milk Delivery API",
-    description="Backend API for Aryavrat Milk Delivery Application",
     version="1.0.0",
 )
 
@@ -17,7 +17,14 @@ async def root():
 @app.get("/health")
 async def health():
     return {
-        "status": "healthy",
-        "service": "Aryavrat Backend",
-        "version": "1.0.0",
+        "status": "healthy"
+    }
+
+
+@app.get("/health/db")
+async def database_health():
+    await database.command("ping")
+
+    return {
+        "database": "connected"
     }

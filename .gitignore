@@ -82,6 +82,7 @@ backend/.coverage
 # Environment
 .env
 *.env
+!.env.example
 
 # IDE
 .idea/

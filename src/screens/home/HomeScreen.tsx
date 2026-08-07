@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useMemo} from 'react';
 
 import {
   Pressable,
@@ -11,16 +11,192 @@ import {
 } from 'react-native';
 
 import {
-  BottomTabScreenProps,
+  CompositeNavigationProp,
+  useNavigation,
+} from '@react-navigation/native';
+
+import {
+  BottomTabNavigationProp,
 } from '@react-navigation/bottom-tabs';
+
+import {
+  NativeStackNavigationProp,
+} from '@react-navigation/native-stack';
 
 import {
   MainTabParamList,
 } from '../../navigation/MainTabs';
 
-type Props = BottomTabScreenProps<MainTabParamList, 'HomeTab'>;
+import {
+  RootStackParamList,
+} from '../../navigation/types';
 
-const HomeScreen = ({navigation}: Props) => {
+import {
+  useOrders,
+} from '../../context/OrderContext';
+
+import {
+  useAuth,
+} from '../../context/AuthContext';
+
+import {
+  PRODUCTS,
+  getProduct,
+} from '../../data/products';
+
+type NavigationProp = CompositeNavigationProp<
+  BottomTabNavigationProp<
+    MainTabParamList,
+    'HomeTab'
+  >,
+  NativeStackNavigationProp<
+    RootStackParamList
+  >
+>;
+
+const HomeScreen = () => {
+  const navigation =
+    useNavigation<NavigationProp>();
+  const {orders} = useOrders();
+
+  const {phoneNumber} = useAuth();
+
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+
+    if (hour < 12) {
+      return 'Good Morning ☀️';
+    }
+
+    if (hour < 17) {
+      return 'Good Afternoon 🌤️';
+    }
+
+    return 'Good Evening 🌙';
+  }, []);
+
+  const profileInitial = useMemo(() => {
+    const firstCharacter =
+      phoneNumber?.trim().charAt(0);
+    return firstCharacter
+      ? firstCharacter.toUpperCase()
+      : 'V';
+  }, [phoneNumber]);
+
+  const activeSubscription = useMemo(
+    () =>
+      orders.find(
+        order =>
+          order.type === 'subscription' &&
+          order.subscriptionStatus ===
+            'active',
+      ),
+    [orders],
+  );
+
+  const monthlySummary = useMemo(() => {
+    const now = new Date();
+    const targetMonth = now.getMonth();
+    const targetYear = now.getFullYear();
+
+    const nonCancelledOrders =
+      orders.filter(
+        order => order.status !== 'cancelled',
+      );
+
+    const monthlyOrders =
+      nonCancelledOrders.filter(order => {
+        const orderDate = new Date(
+          order.createdAt,
+        );
+
+        return (
+          !Number.isNaN(orderDate.getTime()) &&
+          orderDate.getMonth() === targetMonth &&
+          orderDate.getFullYear() === targetYear
+        );
+      });
+
+    const sourceOrders =
+      monthlyOrders.length > 0
+        ? monthlyOrders
+        : nonCancelledOrders;
+
+    const milkOrdered = sourceOrders.reduce(
+      (total, order) => total + order.quantity,
+      0,
+    );
+
+    const amountSpent = sourceOrders.reduce(
+      (total, order) =>
+        total + order.pricePerDelivery,
+      0,
+    );
+
+    return {
+      milkOrdered,
+      orderCount: sourceOrders.length,
+      amountSpent,
+    };
+  }, [orders]);
+
+  const nextDeliveryText =
+    activeSubscription?.nextDeliverySkipped
+      ? 'Skipped'
+      : activeSubscription?.startDate ??
+        'Tomorrow';
+
+  const featuredProduct = useMemo(() => {
+    if (activeSubscription) {
+      return getProduct(
+        activeSubscription.productId,
+      );
+    }
+
+    return (
+      getProduct('cow-milk') ??
+      Object.values(PRODUCTS)[0]
+    );
+  }, [activeSubscription]);
+
+  const formatQuantity = (
+    quantity: number,
+  ) => {
+    if (quantity === 0.5) {
+      return '500 ml';
+    }
+
+    return `${quantity} L`;
+  };
+
+  const formatSchedule = () => {
+    if (!activeSubscription?.schedule) {
+      return 'Custom';
+    }
+
+    if (activeSubscription.schedule === 'daily') {
+      return 'Daily';
+    }
+
+    return activeSubscription.selectedDays
+      ?.join(', ')
+      .trim() || 'Custom';
+  };
+
+  const getSubscriptionStatus = () => {
+    const status =
+      activeSubscription?.subscriptionStatus;
+
+    if (!status) {
+      return 'Active';
+    }
+
+    return (
+      status.charAt(0).toUpperCase() +
+      status.slice(1)
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
 
@@ -37,7 +213,7 @@ const HomeScreen = ({navigation}: Props) => {
 
           <View>
             <Text style={styles.greeting}>
-              Good morning 👋
+              {greeting}
             </Text>
 
             <Text style={styles.location}>
@@ -47,7 +223,7 @@ const HomeScreen = ({navigation}: Props) => {
 
           <View style={styles.profile}>
             <Text style={styles.profileText}>
-              V
+              {profileInitial}
             </Text>
           </View>
 
@@ -115,9 +291,16 @@ const HomeScreen = ({navigation}: Props) => {
             </Text>
           </Pressable>
 
-          <Pressable style={styles.actionCard}>
+          <Pressable
+            style={styles.actionCard}
+            onPress={() =>
+              navigation.navigate('Orders', {
+                initialFilter:
+                  'subscription',
+              })
+            }>
             <Text style={styles.actionIcon}>
-              📅
+              🥛
             </Text>
 
             <Text style={styles.actionTitle}>
@@ -131,26 +314,241 @@ const HomeScreen = ({navigation}: Props) => {
 
         </View>
 
+        <View style={styles.actions}>
+
+          <Pressable
+            style={styles.actionCard}
+            onPress={() =>
+              navigation.navigate(
+                'Addresses',
+                {},
+              )
+            }>
+            <Text style={styles.actionIcon}>
+              📍
+            </Text>
+
+            <Text style={styles.actionTitle}>
+              Addresses
+            </Text>
+
+            <Text style={styles.actionSubtitle}>
+              Manage locations
+            </Text>
+          </Pressable>
+
+          <Pressable
+            style={styles.actionCard}
+            onPress={() =>
+              navigation.navigate(
+                'Notifications',
+              )
+            }>
+            <Text style={styles.actionIcon}>
+              🔔
+            </Text>
+
+            <Text style={styles.actionTitle}>
+              Notifications
+            </Text>
+
+            <Text style={styles.actionSubtitle}>
+              View updates
+            </Text>
+          </Pressable>
+
+        </View>
+
+        <Text style={styles.sectionTitle}>
+          Monthly Summary
+        </Text>
+
         <View style={styles.deliveryCard}>
 
-          <View>
+          <Text style={styles.deliveryLabel}>
+            THIS MONTH
+          </Text>
 
-            <Text style={styles.deliveryLabel}>
-              TOMORROW'S DELIVERY
-            </Text>
+          <View style={styles.summaryRow}>
 
-            <Text style={styles.deliveryTitle}>
-              No delivery scheduled
-            </Text>
+            <View style={styles.summaryItem}>
+              <Text style={styles.summaryValue}>
+                {monthlySummary.milkOrdered.toFixed(
+                  1,
+                )}
+                {' L'}
+              </Text>
 
-            <Text style={styles.deliveryDescription}>
-              Subscribe to milk for automatic
-              morning deliveries.
-            </Text>
+              <Text style={styles.summaryLabel}>
+                Milk Ordered
+              </Text>
+            </View>
+
+            <View style={styles.summaryItem}>
+              <Text style={styles.summaryValue}>
+                {monthlySummary.orderCount}
+              </Text>
+
+              <Text style={styles.summaryLabel}>
+                Number of Orders
+              </Text>
+            </View>
+
+            <View style={styles.summaryItem}>
+              <Text style={styles.summaryValue}>
+                ₹
+                {monthlySummary.amountSpent.toFixed(
+                  0,
+                )}
+              </Text>
+
+              <Text style={styles.summaryLabel}>
+                Amount Spent
+              </Text>
+            </View>
 
           </View>
 
         </View>
+
+        <Text style={styles.sectionTitle}>
+          Active Subscription
+        </Text>
+
+        {activeSubscription ? (
+
+  <View style={styles.deliveryCard}>
+
+    <Text style={styles.deliveryLabel}>
+      ACTIVE SUBSCRIPTION
+    </Text>
+
+    <Text style={styles.deliveryTitle}>
+      {activeSubscription.productName}
+    </Text>
+
+    <Text style={styles.deliveryDescription}>
+      {formatQuantity(
+        activeSubscription.quantity,
+      )}
+      {' • '}
+      {formatSchedule()}
+    </Text>
+
+    <Text
+      style={[
+        styles.deliveryDescription,
+        {marginTop: 10},
+      ]}>
+      Next Delivery:{' '}
+      {nextDeliveryText}
+    </Text>
+
+    <Text
+      style={[
+        styles.deliveryDescription,
+        {marginTop: 2},
+      ]}>
+      Status: {getSubscriptionStatus()}
+    </Text>
+
+    <Pressable
+      style={[
+        styles.heroButton,
+        {marginTop: 18},
+      ]}
+      onPress={() =>
+        navigation.navigate(
+          'SubscriptionDetails',
+          {
+            subscriptionId:
+              activeSubscription.id,
+          },
+        )
+      }>
+
+      <Text style={styles.heroButtonText}>
+        Manage Subscription
+      </Text>
+
+    </Pressable>
+
+  </View>
+
+) : (
+
+  <View style={styles.deliveryCard}>
+
+    <Text style={styles.deliveryLabel}>
+      TOMORROW'S DELIVERY
+    </Text>
+
+    <Text style={styles.deliveryTitle}>
+      No delivery scheduled
+    </Text>
+
+    <Text style={styles.deliveryDescription}>
+      Subscribe to milk for automatic
+      morning deliveries.
+    </Text>
+
+  </View>
+
+)}
+
+        <Text style={styles.sectionTitle}>
+          Next Delivery
+        </Text>
+
+        {activeSubscription ? (
+
+  <View style={styles.deliveryCard}>
+
+    <Text style={styles.deliveryLabel}>
+      UPCOMING DELIVERY
+    </Text>
+
+    <Text style={styles.deliveryTitle}>
+      {activeSubscription.productName}
+    </Text>
+
+    <Text style={styles.deliveryDescription}>
+      Quantity:{' '}
+      {formatQuantity(
+        activeSubscription.quantity,
+      )}
+    </Text>
+
+    <Text style={styles.deliveryDescription}>
+      Next Delivery: {nextDeliveryText}
+    </Text>
+
+    <Text style={styles.deliveryDescription}>
+      Status: {getSubscriptionStatus()}
+    </Text>
+
+  </View>
+
+) : (
+
+  <View style={styles.deliveryCard}>
+
+    <Text style={styles.deliveryLabel}>
+      TOMORROW'S DELIVERY
+    </Text>
+
+    <Text style={styles.deliveryTitle}>
+      No delivery scheduled
+    </Text>
+
+    <Text style={styles.deliveryDescription}>
+      Subscribe to milk for automatic
+      morning deliveries.
+    </Text>
+
+  </View>
+
+)}
 
         <Text style={styles.sectionTitle}>
           Fresh from Aryavrat
@@ -167,7 +565,8 @@ const HomeScreen = ({navigation}: Props) => {
           <View style={styles.productInfo}>
 
             <Text style={styles.productTitle}>
-              Fresh Cow Milk
+              {featuredProduct?.name ??
+                'Fresh Cow Milk'}
             </Text>
 
             <Text style={styles.productSubtitle}>
@@ -175,7 +574,9 @@ const HomeScreen = ({navigation}: Props) => {
             </Text>
 
             <Text style={styles.productPrice}>
-              ₹ -- / litre
+              {featuredProduct
+                ? `₹ ${featuredProduct.pricePerLitre} / litre`
+                : '₹ -- / litre'}
             </Text>
 
           </View>
@@ -315,6 +716,7 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: 'row',
     gap: 12,
+    marginBottom: 12,
   },
 
   actionCard: {
@@ -371,6 +773,30 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
     marginTop: 6,
+  },
+
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 14,
+  },
+
+  summaryItem: {
+    flex: 1,
+  },
+
+  summaryValue: {
+    color: '#17231C',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+
+  summaryLabel: {
+    color: '#7B867F',
+    fontSize: 12,
+    marginTop: 4,
+    lineHeight: 16,
+    maxWidth: 96,
   },
 
   productCard: {

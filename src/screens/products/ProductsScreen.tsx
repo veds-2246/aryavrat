@@ -1,4 +1,4 @@
-import React , {useEffect, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -23,62 +23,66 @@ import {MainTabParamList} from '../../navigation/MainTabs';
 import {RootStackParamList} from '../../navigation/types';
 
 type ProductsScreenNavigationProp = CompositeNavigationProp<
-  BottomTabNavigationProp<MainTabParamList>,
+  BottomTabNavigationProp<MainTabParamList, 'Products'>,
   NativeStackNavigationProp<RootStackParamList>
 >;
 
 const ProductsScreen = () => {
   const navigation = useNavigation<ProductsScreenNavigationProp>();
+
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-  loadProducts();
-}, []);
+    loadProducts();
+  }, []);
 
-const loadProducts = async () => {
-  try {
-    setLoading(true);
-    const data = await fetchProducts();
-    setProducts(data);
-    setError('');
-  } catch (err) {
-    setError('Failed to load products');
-  } finally {
-    setLoading(false);
+  const loadProducts = async () => {
+    try {
+      setLoading(true);
+      const data = await fetchProducts();
+      setProducts(data);
+      setError('');
+    } catch (err) {
+      setError('Failed to load products');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openProduct = (id: string) => {
+    navigation.navigate('ProductDetails', {
+      productId: id,
+    });
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.center}>
+          <Text>Loading products...</Text>
+        </View>
+      </SafeAreaView>
+    );
   }
-};
 
-const openProduct = (id: string) => {
-  navigation.navigate('ProductDetails', {
-    productId: id,
-  });
-};
-
-if (loading) {
-  return (
-    <SafeAreaView style={styles.container}>
-      <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-        <Text>Loading products...</Text>
-      </View>
-    </SafeAreaView>
-  );
-}
-
-if (error) {
-  return (
-    <SafeAreaView style={styles.container}>
-      <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-        <Text>{error}</Text>
-      </View>
-    </SafeAreaView>
-  );
-}
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.center}>
+          <Text>{error}</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F8FBF9" />
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="#F8FBF9"
+      />
 
       <ScrollView
         contentContainerStyle={styles.content}
@@ -91,46 +95,43 @@ if (error) {
         </Text>
 
         {products.map(product => (
-  <View key={product.id} style={styles.card}>
-    <View style={styles.imageBox}>
-      <Text style={styles.emoji}>🥛</Text>
-    </View>
+          <Pressable
+            key={product.id}
+            style={styles.card}
+            onPress={() => openProduct(product.id)}>
 
-    <View style={styles.info}>
-      <Text style={styles.productName}>
-        {product.name}
-      </Text>
+            <View style={styles.imageBox}>
+              <Text style={styles.emoji}>🥛</Text>
+            </View>
 
-      <Text style={styles.description}>
-        {product.description}
-      </Text>
+            <View style={styles.info}>
+              <Text style={styles.productName}>
+                {product.name}
+              </Text>
 
-      <Text style={styles.price}>
-        ₹ {product.price} / {product.unit}
-      </Text>
+              <Text style={styles.description}>
+                {product.description}
+              </Text>
 
-      <View style={styles.actions}>
-        <Pressable
-          style={styles.orderButton}
-          onPress={() => openProduct(product.id)}>
+              <Text style={styles.price}>
+                ₹ {product.price} / {product.unit}
+              </Text>
 
-          <Text style={styles.orderText}>
-            Buy Once
-          </Text>
-        </Pressable>
+              <View style={styles.actions}>
+                <Pressable
+                  style={styles.viewButton}
+                  onPress={() => openProduct(product.id)}>
 
-        <Pressable
-          style={styles.subscribeButton}
-          onPress={() => openProduct(product.id)}>
+                  <Text style={styles.viewButtonText}>
+                    View Product
+                  </Text>
 
-          <Text style={styles.subscribeText}>
-            Subscribe
-          </Text>
-        </Pressable>
-      </View>
-    </View>
-  </View>
-))}
+                </Pressable>
+              </View>
+            </View>
+
+          </Pressable>
+        ))}
 
       </ScrollView>
     </SafeAreaView>
@@ -143,6 +144,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8FBF9',
+  },
+
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 
   content: {
@@ -171,6 +178,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderWidth: 1,
     borderColor: '#E4EBE7',
+    marginBottom: 18,
   },
 
   imageBox: {
@@ -210,37 +218,20 @@ const styles = StyleSheet.create({
   },
 
   actions: {
-    flexDirection: 'row',
-    gap: 10,
     marginTop: 18,
   },
 
-  orderButton: {
-    flex: 1,
-    height: 48,
-    borderWidth: 1,
-    borderColor: '#16794B',
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  orderText: {
-    color: '#16794B',
-    fontWeight: '700',
-  },
-
-  subscribeButton: {
-    flex: 1,
-    height: 48,
+  viewButton: {
+    height: 50,
     backgroundColor: '#16794B',
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
 
-  subscribeText: {
+  viewButtonText: {
     color: '#FFFFFF',
     fontWeight: '700',
+    fontSize: 15,
   },
 });

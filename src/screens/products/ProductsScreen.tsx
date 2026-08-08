@@ -1,4 +1,4 @@
-import React from 'react';
+import React , {useEffect, useState} from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -8,6 +8,8 @@ import {
   View,
   Pressable,
 } from 'react-native';
+
+import {fetchProducts} from '../../services/ProductService';
 
 import {
   CompositeNavigationProp,
@@ -26,14 +28,53 @@ type ProductsScreenNavigationProp = CompositeNavigationProp<
 >;
 
 const ProductsScreen = () => {
-  const navigation =
-  useNavigation<ProductsScreenNavigationProp>();
+  const navigation = useNavigation<ProductsScreenNavigationProp>();
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-const openProduct = () => {
+  useEffect(() => {
+  loadProducts();
+}, []);
+
+const loadProducts = async () => {
+  try {
+    setLoading(true);
+    const data = await fetchProducts();
+    setProducts(data);
+    setError('');
+  } catch (err) {
+    setError('Failed to load products');
+  } finally {
+    setLoading(false);
+  }
+};
+
+const openProduct = (id: string) => {
   navigation.navigate('ProductDetails', {
-    productId: 'cow-milk',
+    productId: id,
   });
 };
+
+if (loading) {
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+        <Text>Loading products...</Text>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+if (error) {
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+        <Text>{error}</Text>
+      </View>
+    </SafeAreaView>
+  );
+}
 
   return (
     <SafeAreaView style={styles.container}>
@@ -49,41 +90,47 @@ const openProduct = () => {
           Fresh dairy delivered to your doorstep every morning.
         </Text>
 
-        <View style={styles.card}>
-          <View style={styles.imageBox}>
-            <Text style={styles.emoji}>🥛</Text>
-          </View>
+        {products.map(product => (
+  <View key={product.id} style={styles.card}>
+    <View style={styles.imageBox}>
+      <Text style={styles.emoji}>🥛</Text>
+    </View>
 
-          <View style={styles.info}>
-            <Text style={styles.productName}>
-              Fresh Cow Milk
-            </Text>
+    <View style={styles.info}>
+      <Text style={styles.productName}>
+        {product.name}
+      </Text>
 
-            <Text style={styles.description}>
-              Fresh and pure milk for your everyday needs.
-            </Text>
+      <Text style={styles.description}>
+        {product.description}
+      </Text>
 
-            <Text style={styles.price}>
-              ₹ -- / litre
-            </Text>
+      <Text style={styles.price}>
+        ₹ {product.price} / {product.unit}
+      </Text>
 
-            <View style={styles.actions}>
-              <Pressable style={styles.orderButton}
-              onPress={openProduct}>
-                <Text style={styles.orderText}>
-                  Buy Once
-                </Text>
-              </Pressable>
+      <View style={styles.actions}>
+        <Pressable
+          style={styles.orderButton}
+          onPress={() => openProduct(product.id)}>
 
-              <Pressable style={styles.subscribeButton}
-              onPress={openProduct}>
-                <Text style={styles.subscribeText}>
-                  Subscribe
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
+          <Text style={styles.orderText}>
+            Buy Once
+          </Text>
+        </Pressable>
+
+        <Pressable
+          style={styles.subscribeButton}
+          onPress={() => openProduct(product.id)}>
+
+          <Text style={styles.subscribeText}>
+            Subscribe
+          </Text>
+        </Pressable>
+      </View>
+    </View>
+  </View>
+))}
 
       </ScrollView>
     </SafeAreaView>

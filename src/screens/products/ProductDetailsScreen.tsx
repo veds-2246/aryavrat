@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 
 import {
   Pressable,
@@ -12,14 +12,37 @@ import {
 
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../../navigation/types';
+import {fetchProductById} from '../../services/ProductService';
 
 type Props = NativeStackScreenProps<
   RootStackParamList,
   'ProductDetails'
 >;
 
-const ProductDetailsScreen = ({navigation}: Props) => {
+const ProductDetailsScreen = ({navigation, route}: Props) => {
   const [quantity, setQuantity] = useState(0.5);
+  const [product, setProduct] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const productId = route.params.productId;
+
+  useEffect(() => {
+  loadProduct();
+}, []);
+
+const loadProduct = async () => {
+  try {
+    setLoading(true);
+    const data = await fetchProductById(productId);
+    setProduct(data);
+    setError('');
+  } catch (err) {
+    setError('Failed to load product');
+  } finally {
+    setLoading(false);
+  }
+};
 
   const decreaseQuantity = () => {
     if (quantity > 0.5) {
@@ -41,17 +64,37 @@ const ProductDetailsScreen = ({navigation}: Props) => {
 
   const handleBuyOnce = () => {
   navigation.navigate('BuyOnce', {
-    productId: 'cow-milk',
+    productId,
     quantity,
   });
 };
 
   const handleSubscribe = () => {
   navigation.navigate('SubscriptionSetup', {
-    productId: 'cow-milk',
+    productId,
     quantity,
   });
 };
+
+if (loading) {
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={{flex:1, justifyContent:'center', alignItems:'center'}}>
+        <Text>Loading product...</Text>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+if (error || !product) {
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={{flex:1, justifyContent:'center', alignItems:'center'}}>
+        <Text>{error || 'Product not found'}</Text>
+      </View>
+    </SafeAreaView>
+  );
+}
 
   return (
     <SafeAreaView style={styles.container}>
@@ -85,12 +128,11 @@ const ProductDetailsScreen = ({navigation}: Props) => {
         </View>
 
         <Text style={styles.title}>
-          Fresh Cow Milk
+          {product.name}
         </Text>
 
         <Text style={styles.subtitle}>
-          Pure, fresh cow milk delivered directly
-          to your doorstep every morning.
+         {product.description}
         </Text>
 
         <View style={styles.infoRow}>
@@ -128,7 +170,7 @@ const ProductDetailsScreen = ({navigation}: Props) => {
             </Text>
 
             <Text style={styles.price}>
-              ₹ -- / litre
+              ₹ {product.price} / {product.unit}
             </Text>
           </View>
 

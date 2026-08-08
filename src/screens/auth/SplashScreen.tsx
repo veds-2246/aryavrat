@@ -50,7 +50,7 @@ const SplashScreen = ({
        * go to Login.
        */
       if (isLoggedIn) {
-        navigation.replace('Home');
+        navigation.replace('MainTabs');
       } else {
         navigation.replace('Login');
       }

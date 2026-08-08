@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useState} from 'react';
+import React, {useEffect, useMemo, useState, useCallback} from 'react';
 
 import {
   SafeAreaView,
@@ -16,7 +16,7 @@ import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 
 import {RootStackParamList} from '../../navigation/types';
 import {MainTabParamList} from '../../navigation/MainTabs';
-import {useOrders} from '../../context/OrderContext';
+import {fetchOrders} from '../../services/OrderService';
 import {AppOrder} from '../../types/orders';
 
 import OrderCard from './OrderCard';
@@ -35,10 +35,27 @@ const OrdersScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<OrdersRouteProp>();
 
-  const {orders, isHydrated} = useOrders();
+  const [orders, setOrders] = useState<any[]>([]);
+const [loading, setLoading] = useState(true);
 
   const [filter, setFilter] =
     useState<Filter>('all');
+
+  const loadOrders = useCallback(async () => {
+  try {
+    setLoading(true);
+    const data = await fetchOrders();
+    setOrders(data);
+  } catch (error) {
+    console.error('Failed to load orders', error);
+  } finally {
+    setLoading(false);
+  }
+}, []);
+
+useEffect(() => {
+  loadOrders();
+}, [loadOrders]);
 
   const requestedFilter =
     route.params?.initialFilter;
@@ -54,10 +71,10 @@ const OrdersScreen: React.FC = () => {
     });
   }, [requestedFilter, navigation]);
   const filtered = useMemo(() => {
-    if (filter === 'all') return orders;
-    if (filter === 'buyOnce') return orders.filter(o => o.type === 'buyOnce');
-    return orders.filter(o => o.type === 'subscription');
-  }, [orders, filter]);
+  if (filter === 'all') return orders;
+  if (filter === 'buyOnce') return orders.filter(o => o.type === 'buyOnce');
+  return orders.filter(o => o.type === 'subscription');
+}, [orders, filter]);
 
   const handlePress = (order: AppOrder) => {
     if (order.type === 'subscription') {
@@ -74,9 +91,9 @@ const OrdersScreen: React.FC = () => {
     navigation.navigate('HomeTab' as never);
   };
 
-  const renderItem = ({item}: ListRenderItemInfo<AppOrder>) => {
-    return <OrderCard order={item} onPress={handlePress} />;
-  };
+  const renderItem = ({item}: ListRenderItemInfo<any>) => (
+  <OrderCard order={item} onPress={() => handlePress(item)} />
+);
 
   const keyExtractor = (item: AppOrder) => item.id;
 
@@ -95,18 +112,28 @@ const OrdersScreen: React.FC = () => {
       <View style={styles.content}>
         <OrderFilterTabs active={filter} onChange={setFilter} />
 
-        {(!isHydrated || (filtered.length === 0 && isHydrated)) ? (
-          <View style={styles.emptyWrap}>
-            <EmptyOrders title={emptyTitle} subtitle={emptyText} onContinue={handleContinue} />
-          </View>
-        ) : (
+{loading ? (
+  <View style={styles.emptyWrap}>
+    <Text>Loading orders...</Text>
+  </View>
+) : filtered.length === 0 ? (          
+  <View style={styles.emptyWrap}>
+    <EmptyOrders
+      title={emptyTitle}
+      subtitle={emptyText}
+      onContinue={handleContinue}
+    />
+  </View>
+) : (
           <FlatList
-            data={filtered}
-            keyExtractor={keyExtractor}
-            renderItem={renderItem}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.listContent}
-          />
+  data={filtered}
+  keyExtractor={keyExtractor}
+  renderItem={renderItem}
+  refreshing={loading}
+  onRefresh={loadOrders}
+  showsVerticalScrollIndicator={false}
+  contentContainerStyle={styles.listContent}
+/>
         )}
       </View>
     </SafeAreaView>

@@ -9,23 +9,37 @@ import {AppOrder} from '../../types/orders';
 import OrderStatusChip from './OrderStatusChip';
 
 type Props = {
-  order: AppOrder;
-  onPress: (order: AppOrder) => void;
+  order: AppOrder | any;
+  onPress: (order: any) => void;
 };
 
 const formatQuantity = (litres: number) => {
+  if (!litres) return '0 L';
   if (litres === 0.5) return '500 ml';
   return `${litres} L`;
 };
 
-const formatSchedule = (order: AppOrder) => {
+const formatSchedule = (order: any) => {
   if (order.schedule === 'daily') return 'Daily';
-  if (order.schedule === 'custom') return order.selectedDays?.join(', ') || 'Custom Days';
+  if (order.schedule === 'custom') {
+    return order.selectedDays?.join(', ') || 'Custom Days';
+  }
   return 'Not set';
 };
 
 const OrderCard: React.FC<Props> = ({order, onPress}) => {
   const isSubscription = order.type === 'subscription';
+
+  // Support both frontend (camelCase) and backend (snake_case)
+  const productName = order.productName ?? order.product_name ?? 'Milk';
+  const quantity = Number(order.quantity ?? 0);
+  const deliveryDate = order.deliveryDate ?? order.delivery_date ?? 'Scheduled';
+  const totalAmount = Number(order.totalAmount ?? order.total_amount ?? 0);
+  const estimatedMonthlyCost = Number(
+    order.estimatedMonthlyCost ?? order.estimated_monthly_cost ?? 0,
+  );
+  const status = order.status ?? 'pending';
+  const subscriptionStatus = order.subscriptionStatus ?? order.subscription_status;
 
   return (
     <TouchableOpacity
@@ -34,18 +48,19 @@ const OrderCard: React.FC<Props> = ({order, onPress}) => {
       onPress={() => onPress(order)}>
 
       <View style={styles.header}>
-
         <View style={styles.iconBox}>
           <Text style={styles.icon}>🥛</Text>
         </View>
 
         <View style={styles.info}>
-          <Text style={styles.productName}>{order.productName}</Text>
+          <Text style={styles.productName}>{productName}</Text>
           <Text style={styles.reference}>{order.id}</Text>
         </View>
 
-        <OrderStatusChip type={order.type} status={order.type === 'subscription' ? (order.subscriptionStatus ?? '') : order.status} />
-
+        <OrderStatusChip
+          type={order.type}
+          status={isSubscription ? (subscriptionStatus ?? '') : status}
+        />
       </View>
 
       <View style={styles.divider} />
@@ -53,12 +68,16 @@ const OrderCard: React.FC<Props> = ({order, onPress}) => {
       <View style={styles.row}>
         <View style={styles.block}>
           <Text style={styles.label}>Quantity</Text>
-          <Text style={styles.value}>{formatQuantity(order.quantity)}</Text>
+          <Text style={styles.value}>{formatQuantity(quantity)}</Text>
         </View>
 
         <View style={[styles.block, styles.rightBlock]}>
-          <Text style={styles.label}>{isSubscription ? 'Schedule' : 'Delivery'}</Text>
-          <Text style={styles.value}>{isSubscription ? formatSchedule(order) : order.deliveryDate ?? 'Scheduled'}</Text>
+          <Text style={styles.label}>
+            {isSubscription ? 'Schedule' : 'Delivery'}
+          </Text>
+          <Text style={styles.value}>
+            {isSubscription ? formatSchedule(order) : deliveryDate}
+          </Text>
         </View>
       </View>
 
@@ -69,18 +88,24 @@ const OrderCard: React.FC<Props> = ({order, onPress}) => {
           <View style={styles.row}>
             <View style={styles.block}>
               <Text style={styles.label}>Starts</Text>
-              <Text style={styles.value}>{order.startDate ?? 'Scheduled'}</Text>
+              <Text style={styles.value}>
+                {order.startDate ?? order.start_date ?? 'Scheduled'}
+              </Text>
             </View>
 
             <View style={[styles.block, styles.rightBlock]}>
               <Text style={styles.label}>Est. monthly</Text>
-              <Text style={styles.price}>₹{order.estimatedMonthlyCost ? order.estimatedMonthlyCost.toFixed(0) : '0'}</Text>
+              <Text style={styles.price}>
+                ₹{estimatedMonthlyCost.toFixed(0)}
+              </Text>
             </View>
           </View>
 
-          {order.nextDeliverySkipped ? (
+          {(order.nextDeliverySkipped ?? order.next_delivery_skipped) ? (
             <View style={styles.skippedBox}>
-              <Text style={styles.skippedText}>✓ Next delivery skipped</Text>
+              <Text style={styles.skippedText}>
+                ✓ Next delivery skipped
+              </Text>
             </View>
           ) : null}
         </>
@@ -90,14 +115,14 @@ const OrderCard: React.FC<Props> = ({order, onPress}) => {
 
           <View style={styles.totalRow}>
             <Text style={styles.label}>Order total</Text>
-            <Text style={styles.price}>₹{order.pricePerDelivery.toFixed(0)}</Text>
+            <Text style={styles.price}>₹{totalAmount.toFixed(2)}</Text>
           </View>
         </>
       )}
 
       {!(
-        order.status === 'cancelled' ||
-        (order.type === 'subscription' && order.subscriptionStatus === 'cancelled')
+        status === 'cancelled' ||
+        (isSubscription && subscriptionStatus === 'cancelled')
       ) ? (
         <View style={styles.morningBox}>
           <Text style={styles.morningText}>🌅 Morning delivery</Text>
@@ -135,22 +160,89 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  icon: {fontSize: 26},
-  info: {flex: 1, marginLeft: 12},
-  productName: {color: '#17231C', fontSize: 14, fontWeight: '700'},
-  reference: {color: '#929C96', fontSize: 9, marginTop: 4},
-  divider: {height: 1, backgroundColor: '#E7ECE9', marginVertical: 14},
-  row: {flexDirection: 'row', justifyContent: 'space-between'},
-  block: {flex: 1},
-  rightBlock: {alignItems: 'flex-end', marginLeft: 15},
-  label: {color: '#929C96', fontSize: 9},
-  value: {color: '#35433A', fontSize: 11, fontWeight: '700', marginTop: 4},
-  price: {color: '#16794B', fontSize: 14, fontWeight: '800', marginTop: 3},
-  totalRow: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'},
-  morningBox: {backgroundColor: '#F0F8F4', borderRadius: 8, padding: 9, marginTop: 14},
-  morningText: {color: '#16794B', fontSize: 10, fontWeight: '600'},
-  skippedBox: {backgroundColor: '#EAF5EF', borderRadius: 8, padding: 9, marginTop: 14},
-  skippedText: {color: '#16794B', fontSize: 10, fontWeight: '700'},
-  chevronBox: {position: 'absolute', right: 12, top: 12},
-  chevron: {fontSize: 20, color: '#9AA6A0'},
+  icon: {
+    fontSize: 26,
+  },
+  info: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  productName: {
+    color: '#17231C',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  reference: {
+    color: '#929C96',
+    fontSize: 9,
+    marginTop: 4,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#E7ECE9',
+    marginVertical: 14,
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  block: {
+    flex: 1,
+  },
+  rightBlock: {
+    alignItems: 'flex-end',
+    marginLeft: 15,
+  },
+  label: {
+    color: '#929C96',
+    fontSize: 9,
+  },
+  value: {
+    color: '#35433A',
+    fontSize: 11,
+    fontWeight: '700',
+    marginTop: 4,
+  },
+  price: {
+    color: '#16794B',
+    fontSize: 14,
+    fontWeight: '800',
+    marginTop: 3,
+  },
+  totalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  morningBox: {
+    backgroundColor: '#F0F8F4',
+    borderRadius: 8,
+    padding: 9,
+    marginTop: 14,
+  },
+  morningText: {
+    color: '#16794B',
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  skippedBox: {
+    backgroundColor: '#EAF5EF',
+    borderRadius: 8,
+    padding: 9,
+    marginTop: 14,
+  },
+  skippedText: {
+    color: '#16794B',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  chevronBox: {
+    position: 'absolute',
+    right: 12,
+    top: 12,
+  },
+  chevron: {
+    fontSize: 20,
+    color: '#9AA6A0',
+  },
 });

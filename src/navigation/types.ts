@@ -1,4 +1,6 @@
 import {DeliveryAddress} from '../types/checkout';
+import {NavigatorScreenParams} from '@react-navigation/native';
+import {MainTabParamList} from './MainTabs';
 
 export type RootStackParamList = {
   Splash: undefined;
@@ -9,8 +11,7 @@ export type RootStackParamList = {
     phoneNumber: string;
   };
 
-  Home: undefined;
-
+MainTabs: NavigatorScreenParams<MainTabParamList> | undefined;
   ProductDetails: {
     productId: string;
   };

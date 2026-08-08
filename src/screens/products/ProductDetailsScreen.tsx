@@ -1,13 +1,15 @@
 import React, {useEffect, useState} from 'react';
+import {createOrder} from '../../services/OrderService';
 
 import {
-  Pressable,
   SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
   View,
+  Pressable,
+  Alert,
 } from 'react-native';
 
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
@@ -62,11 +64,46 @@ const loadProduct = async () => {
   return `${litres} L`;
 };
 
-  const handleBuyOnce = () => {
-  navigation.navigate('BuyOnce', {
-    productId,
-    quantity,
-  });
+  const handleBuyOnce = async () => {
+  if (!product) {
+    return;
+  }
+
+  try {
+    const totalAmount = product.price * quantity;
+
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    await createOrder({
+      product_id: product.id,
+      product_name: product.name,
+      quantity,
+      price_per_unit: product.price,
+      total_amount: totalAmount,
+      delivery_date: tomorrow.toISOString().split('T')[0],
+      delivery_address: 'Home Address',
+      type: 'buyOnce',
+    });
+
+    Alert.alert(
+      'Order Placed',
+      'Your order has been placed successfully!',
+      [
+        {
+          text: 'View Orders',
+          onPress: () => navigation.navigate('MainTabs', {
+            screen: 'Orders'
+          }),
+        },
+      ],
+    );
+  } catch (error) {
+    Alert.alert(
+      'Order Failed',
+      'Unable to place order. Please try again.',
+    );
+  }
 };
 
   const handleSubscribe = () => {

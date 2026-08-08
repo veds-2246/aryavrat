@@ -56,7 +56,7 @@ const AppNavigator = () => {
         />
 
         <Stack.Screen
-          name="Home"
+          name="MainTabs"
           component={MainTabs}
         />
 

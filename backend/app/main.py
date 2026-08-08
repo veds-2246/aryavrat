@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from app.database.mongodb import database
 from app.api.products import router as product_router
+from app.api.orders import router as order_router
 
 app = FastAPI(
     title="Aryavrat Milk Delivery API",
@@ -8,6 +9,7 @@ app = FastAPI(
 )
 
 app.include_router(product_router)
+app.include_router(order_router)
 
 
 @app.get("/")

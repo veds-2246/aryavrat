@@ -94,11 +94,14 @@ const loadProduct = async () => {
 addOrder({
   id: createdOrder.id,
   type: 'buyOnce',
+  productId: product.id,
   productName: product.name,
   quantity,
-  totalAmount,
-  status: 'pending',
+  status: 'confirmed',
+  createdAt: new Date().toISOString(),
   deliveryDate: tomorrow.toISOString().split('T')[0],
+  pricePerDelivery: product.price,
+  estimatedMonthlyCost: totalAmount,
 });
 
     Alert.alert(

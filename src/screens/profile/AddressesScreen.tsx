@@ -1,5 +1,4 @@
 import React from 'react';
-
 import {
   SafeAreaView,
   StatusBar,
@@ -10,64 +9,115 @@ import {
   FlatList,
 } from 'react-native';
 
-import {useAddresses} from '../../context/AddressContext';
-import { useOrders } from '../../context/OrderContext';
+import {useOrders} from '../../context/OrderContext';
+import {useAuth} from '../../context/AuthContext';
+import {useNotifications} from '../../context/NotificationContext';
 
 import {
   useNavigation,
+  useRoute,
+  useFocusEffect,
 } from '@react-navigation/native';
 
-import {
-  NativeStackNavigationProp,
-} from '@react-navigation/native-stack';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+
+import {RootStackParamList} from '../../navigation/types';
 
 import {
-  RootStackParamList,
-} from '../../navigation/types';
+  fetchAddresses,
+  deleteAddress as deleteAddressApi,
+  updateAddress,
+} from '../../services/AddressService';
 
-import {
-  useNotifications,
-} from '../../context/NotificationContext';
+type AddressesScreenNavigationProp =
+  NativeStackNavigationProp<
+    RootStackParamList,
+    'Addresses'
+  >;
 
-type AddressesScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Addresses'>;
-
-import {useRoute} from '@react-navigation/native';
+type BackendAddress = {
+  id: string;
+  user_id: string;
+  label: string;
+  full_name: string;
+  phone: string;
+  address_line: string;
+  landmark?: string;
+  city: string;
+  state: string;
+  pincode: string;
+  is_default: boolean;
+};
 
 const AddressesScreen = () => {
-  const navigation = useNavigation<AddressesScreenNavigationProp>();
+  const navigation =
+    useNavigation<AddressesScreenNavigationProp>();
+
+
   const route = useRoute();
-  const params = (route.params ?? {}) as {
-  mode?: 'manage' | 'select';
-  selectedAddressId?: string;
-  returnScreen?: keyof RootStackParamList;
-  returnSubscriptionId?: string;
-};
 
-  const {
-    addresses,
-    setDefaultAddress,
-    deleteAddress,
-  } = useAddresses();
+  const params = (route.params ??
+    {}) as {
+    mode?: 'manage' | 'select';
+    selectedAddressId?: string;
+    returnScreen?: keyof RootStackParamList;
+    returnSubscriptionId?: string;
+  };
 
-  // Order updater used only in selection mode to persist chosen address for a subscription
-  const { updateOrder } = useOrders();
+  const {userId} = useAuth();
 
-  const {
-  addNotification,
-} = useNotifications();
+  const [addresses, setAddresses] =
+    React.useState<BackendAddress[]>([]);
 
-  const isSelectMode = params.mode === 'select';
+  const {updateOrder} = useOrders();
 
-  // Local selection state so tapping a card highlights it immediately before navigation back.
-  const [selectedId, setSelectedId] = React.useState<string | undefined>(params.selectedAddressId);
+  const {addNotification} =
+    useNotifications();
+
+  const isSelectMode =
+    params.mode === 'select';
+
+  const [selectedId, setSelectedId] =
+    React.useState<string | undefined>(
+      params.selectedAddressId,
+    );
+
+  const loadAddresses =
+    React.useCallback(async () => {
+      if (!userId) {
+        return;
+      }
+
+      try {
+        const data =
+          await fetchAddresses(userId);
+
+        setAddresses(data);
+      } catch (error) {
+        console.error(
+          'Failed to load addresses',
+          error,
+        );
+      }
+    }, [userId]);
+
+  React.useEffect(() => {
+    loadAddresses();
+  }, [loadAddresses]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadAddresses();
+    }, [loadAddresses]),
+  );
 
   const handleSelect = (id: string) => {
-  if (!isSelectMode) {
-    return;
-  }
+    if (!isSelectMode) {
+      return;
+    }
 
-  setSelectedId(id);
-};
+    setSelectedId(id);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -90,40 +140,60 @@ const AddressesScreen = () => {
                 No addresses added yet
               </Text>
 
-              <Text style={styles.emptySubtitle}>
-                Add your first delivery address.
+              <Text
+                style={styles.emptySubtitle}>
+                Add your first delivery
+                address.
               </Text>
             </View>
           }
           renderItem={({item}) => (
             <Pressable
-              onPress={() => (isSelectMode ? handleSelect(item.id) : undefined)}
-              style={item.id === selectedId && isSelectMode ? [styles.card, styles.selectedCard] : styles.card}
-            >
+              onPress={() =>
+                isSelectMode
+                  ? handleSelect(item.id)
+                  : undefined
+              }
+              style={
+                item.id === selectedId &&
+                isSelectMode
+                  ? [
+                      styles.card,
+                      styles.selectedCard,
+                    ]
+                  : styles.card
+              }>
               <View style={styles.row}>
                 <Text style={styles.label}>
                   {item.label}
                 </Text>
 
-                {item.isDefault && !isSelectMode && (
-                  <View style={styles.defaultBadge}>
-                    <Text style={styles.defaultText}>
-                      Default
-                    </Text>
-                  </View>
-                )}
+                {item.is_default &&
+                  !isSelectMode && (
+                    <View
+                      style={
+                        styles.defaultBadge
+                      }>
+                      <Text
+                        style={
+                          styles.defaultText
+                        }>
+                        Default
+                      </Text>
+                    </View>
+                  )}
               </View>
 
               <Text style={styles.name}>
-                {item.fullName}
+                {item.full_name}
               </Text>
 
               <Text style={styles.address}>
-                {item.house}
+                {item.address_line}
               </Text>
 
               <Text style={styles.address}>
-                {item.area}
+                {item.state}
               </Text>
 
               {!!item.landmark && (
@@ -133,22 +203,30 @@ const AddressesScreen = () => {
               )}
 
               <Text style={styles.address}>
-                {item.city} - {item.pinCode}
+                {item.city} - {item.pincode}
               </Text>
 
               <Text style={styles.phone}>
-                {item.phoneNumber}
+                {item.phone}
               </Text>
 
               {!isSelectMode && (
                 <View style={styles.actions}>
-
-                  {!item.isDefault && (
+                  {!item.is_default && (
                     <Pressable
-                      onPress={() =>
-                        setDefaultAddress(item.id)
-                      }>
-                      <Text style={styles.action}>
+                      onPress={async () => {
+                        await updateAddress(
+                          item.id,
+                          {
+                            is_default:
+                              true,
+                          },
+                        );
+
+                        loadAddresses();
+                      }}>
+                      <Text
+                        style={styles.action}>
                         Set Default
                       </Text>
                     </Pressable>
@@ -159,21 +237,25 @@ const AddressesScreen = () => {
                       navigation.navigate(
                         'AddEditAddress',
                         {
-                          addressId: item.id,
+                          addressId:
+                            item.id,
                         },
                       )
                     }>
-
-                    <Text style={styles.action}>
+                    <Text
+                      style={styles.action}>
                       Edit
                     </Text>
-
                   </Pressable>
 
                   <Pressable
-                    onPress={() =>
-                      deleteAddress(item.id)
-                    }>
+                    onPress={async () => {
+                      await deleteAddressApi(
+                        item.id,
+                      );
+
+                      loadAddresses();
+                    }}>
                     <Text
                       style={[
                         styles.action,
@@ -182,7 +264,6 @@ const AddressesScreen = () => {
                       Delete
                     </Text>
                   </Pressable>
-
                 </View>
               )}
             </Pressable>
@@ -193,13 +274,14 @@ const AddressesScreen = () => {
           <Pressable
             style={styles.addButton}
             onPress={() =>
-            navigation.navigate('AddEditAddress', {})
+              navigation.navigate(
+                'AddEditAddress',
+                {},
+              )
             }>
-
             <Text style={styles.addText}>
               + Add New Address
             </Text>
-
           </Pressable>
         )}
 
@@ -207,47 +289,51 @@ const AddressesScreen = () => {
           <Pressable
             style={[
               styles.addButton,
-              !selectedId && styles.disabledButton,
+              !selectedId &&
+                styles.disabledButton,
             ]}
             disabled={!selectedId}
             onPress={() => {
-              // Update only the target subscription's addressId via OrderContext
-              // This keeps AddressesScreen generic while using OrderContext to apply business logic.
-              if (selectedId && params.returnSubscriptionId) {
+              if (
+                selectedId &&
+                params.returnSubscriptionId
+              ) {
+                updateOrder(
+                  params.returnSubscriptionId,
+                  {
+                    addressId:
+                      selectedId,
+                  },
+                );
 
-  updateOrder(
-    params.returnSubscriptionId,
-    {
-      addressId: selectedId,
-    },
-  );
+                const address =
+                  addresses.find(
+                    a =>
+                      a.id ===
+                      selectedId,
+                  );
 
-  const address =
-    addresses.find(
-      a => a.id === selectedId,
-    );
+                addNotification({
+                  id: Date.now().toString(),
+                  title:
+                    '📍 Delivery Address Updated',
+                  message: address
+                    ? `Delivery address changed to ${address.label}.`
+                    : 'Delivery address updated.',
+                  type: 'address',
+                  createdAt:
+                    new Date().toLocaleString(),
+                  isRead: false,
+                });
+              }
 
-  addNotification({
-    id: Date.now().toString(),
-    title: '📍 Delivery Address Updated',
-    message: address
-      ? `Delivery address changed to ${address.label}.`
-      : 'Delivery address updated.',
-    type: 'address',
-    createdAt: new Date().toLocaleString(),
-    isRead: false,
-  });
-
-}
-
-navigation.goBack();
+              navigation.goBack();
             }}>
             <Text style={styles.addText}>
               Use This Address
             </Text>
           </Pressable>
         )}
-
       </View>
     </SafeAreaView>
   );
@@ -299,7 +385,8 @@ const styles = StyleSheet.create({
 
   row: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent:
+      'space-between',
   },
 
   label: {
@@ -313,6 +400,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 20,
   },
+
   selectedCard: {
     borderColor: '#16794B',
     backgroundColor: '#EAF5EF',
@@ -364,8 +452,8 @@ const styles = StyleSheet.create({
   },
 
   disabledButton: {
-  backgroundColor: '#BFC8C2',
-},
+    backgroundColor: '#BFC8C2',
+  },
 
   addText: {
     color: '#FFF',

@@ -1,57 +1,66 @@
-import React, {useState, useEffect} from 'react';   
-
+import React, {useEffect, useState} from 'react';
 import {
   SafeAreaView,
   StatusBar,
   StyleSheet,
   Text,
-  TextInput,
   View,
+  TextInput,
   Pressable,
   ScrollView,
   Switch,
+  Alert,
 } from 'react-native';
-
-import {useAddresses} from '../../context/AddressContext';
-import {Address} from '../../types/address';
 
 import {
   useNavigation,
   useRoute,
+  RouteProp,
 } from '@react-navigation/native';
 
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {RouteProp} from '@react-navigation/native';
 
 import {RootStackParamList} from '../../navigation/types';
+import {useAuth} from '../../context/AuthContext';
 
-type NavigationProp =
-  NativeStackNavigationProp<RootStackParamList>;
+import {
+  createAddress,
+  updateAddress,
+  fetchAddresses,
+} from '../../services/AddressService';
 
-type RouteProps =
-  RouteProp<
-    RootStackParamList,
-    'AddEditAddress'
-  >;
+type NavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'AddEditAddress'
+>;
+
+type AddEditAddressRouteProp = RouteProp<
+  RootStackParamList,
+  'AddEditAddress'
+>;
+
+type BackendAddress = {
+  id: string;
+  user_id: string;
+  label: string;
+  full_name: string;
+  phone: string;
+  address_line: string;
+  landmark?: string;
+  city: string;
+  state: string;
+  pincode: string;
+  is_default: boolean;
+};
 
 const AddEditAddressScreen = () => {
+  const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<AddEditAddressRouteProp>();
 
-  const navigation =
-    useNavigation<NavigationProp>();
+  const {userId} = useAuth();
 
-  const route = useRoute<RouteProps>();
-
-  const {
-    addAddress,
-    updateAddress,
-    getAddressById,
-  } = useAddresses();
-
-  const editingAddress = 
-    route.params?.addressId
-    ? getAddressById(route.params.addressId)
-    : undefined;
-
+  const [editingAddress, setEditingAddress] =
+    useState<BackendAddress | null>(null);
 
   const [fullName, setFullName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -60,399 +69,283 @@ const AddEditAddressScreen = () => {
   const [landmark, setLandmark] = useState('');
   const [city, setCity] = useState('');
   const [pinCode, setPinCode] = useState('');
-
-  const [label, setLabel] = useState<
-    'Home' | 'Office' | 'Other'
-  >('Home');
-
+  const [label, setLabel] =
+    useState<'Home' | 'Work' | 'Other'>(
+      'Home',
+    );
   const [isDefault, setIsDefault] =
     useState(false);
 
-  const [fullNameError, setFullNameError] = useState('');
-  const [phoneError, setPhoneError] = useState('');
-  const [houseError, setHouseError] = useState('');
-  const [areaError, setAreaError] = useState('');
-  const [cityError, setCityError] = useState('');
-  const [pinCodeError, setPinCodeError] = useState('');
   useEffect(() => {
-
-    if (!editingAddress) {
+    const loadAddress = async () => {
+      if (
+        !route.params?.addressId ||
+        !userId
+      ) {
         return;
-    }
+      }
 
-    setFullName(editingAddress.fullName);
-    setPhoneNumber(editingAddress.phoneNumber);
-    setHouse(editingAddress.house);
-    setArea(editingAddress.area);
-    setLandmark(editingAddress.landmark ?? '');
-    setCity(editingAddress.city);
-    setPinCode(editingAddress.pinCode);
-    setLabel(editingAddress.label);
-    setIsDefault(editingAddress.isDefault);
+      try {
+        const addresses =
+          await fetchAddresses(userId);
 
-}, [editingAddress]);
+        const address = addresses.find(
+          (a: BackendAddress) =>
+            a.id === route.params?.addressId,
+        );
 
-const AddressTypeButton = ({
-    title,
-    }: {
-    title: 'Home' | 'Office' | 'Other';
-  }) => (
-    <Pressable
-      style={[
-      styles.typeButton,
-        label === title &&
-          styles.selectedType,
-      ]}
-      onPress={() =>
-        setLabel(title)
-      }>
+        if (!address) {
+          return;
+        }
 
-      <Text
-        style={[
-          styles.typeText,
-          label === title &&
-            styles.selectedTypeText,
-        ]}>
-        {title}
-      </Text>
+        setEditingAddress(address);
+        setFullName(address.full_name);
+        setPhoneNumber(address.phone);
+        setHouse(address.address_line);
+        setArea(address.state);
+        setLandmark(address.landmark ?? '');
+        setCity(address.city);
+        setPinCode(address.pincode);
+        setLabel(
+          (address.label as
+            | 'Home'
+            | 'Work'
+            | 'Other') ?? 'Home',
+        );
+        setIsDefault(address.is_default);
+      } catch (error) {
+        console.error(
+          'Failed to load address',
+          error,
+        );
+      }
+    };
 
-    </Pressable>
-  );
+    loadAddress();
+  }, [route.params?.addressId, userId]);
 
   const validateForm = () => {
-      let valid = true;
-
-      // Full name
-      if (!fullName.trim()) {
-        setFullNameError('Full name is required.');
-        valid = false;
-      } else {
-        setFullNameError('');
-      }
-
-      // Phone: required, 10 digits, digits only
-      if (!phoneNumber) {
-        setPhoneError('Phone number is required.');
-        valid = false;
-      } else if (!/^\d{10}$/.test(phoneNumber)) {
-        setPhoneError('Enter a valid 10-digit mobile number.');
-        valid = false;
-      } else {
-        setPhoneError('');
+    if (
+      !fullName.trim() ||
+      !phoneNumber.trim() ||
+      !house.trim() ||
+      !area.trim() ||
+      !city.trim() ||
+      !pinCode.trim()
+    ) {
+      Alert.alert(
+        'Missing Information',
+        'Please fill all required fields.',
+      );
+      return false;
     }
 
-      // House
-      if (!house.trim()) {
-        setHouseError('House / Flat number is required.');
-        valid = false;
-      } else {
-        setHouseError('');
+    if (phoneNumber.length < 10) {
+      Alert.alert(
+        'Invalid Phone',
+        'Enter a valid phone number.',
+      );
+      return false;
     }
 
-      // Area
-      if (!area.trim()) {
-        setAreaError('Area / Locality is required.');
-        valid = false;
-      } else {
-        setAreaError('');
-      }
+    if (pinCode.length !== 6) {
+      Alert.alert(
+        'Invalid PIN Code',
+        'PIN Code must be 6 digits.',
+      );
+      return false;
+    }
 
-      // City
-      if (!city.trim()) {
-        setCityError('City is required.');
-        valid = false;
-      } else {
-        setCityError('');
-      }
+    return true;
+  };
 
-      // PIN
-      if (!pinCode) {
-        setPinCodeError('PIN code is required.');
-        valid = false;
-      } else if (!/^\d{6}$/.test(pinCode)) {
-        setPinCodeError('Enter a valid 6-digit PIN code.');
-        valid = false;
-      } else {
-        setPinCodeError('');
-      }
-
-      return valid;
-    };
-
-const handleSave = () => {
-
+  const handleSave = async () => {
     if (!validateForm()) {
-    return;
-  }
+      return;
+    }
 
-  const address: Address = {
-      id: editingAddress?.id ?? Date.now().toString(),
+    if (!userId) {
+      Alert.alert(
+        'Error',
+        'Please login again.',
+      );
+      return;
+    }
 
-      fullName: fullName.trim(),
-      phoneNumber,
-      house: house.trim(),
-      area: area.trim(),
+    const address = {
+      user_id: userId,
+      label,
+      full_name: fullName.trim(),
+      phone: phoneNumber.trim(),
+      address_line: house.trim(),
       landmark: landmark.trim(),
       city: city.trim(),
-      pinCode,
-      label,
-      isDefault,
+      state: area.trim(),
+      pincode: pinCode.trim(),
+      is_default: isDefault,
     };
 
-    if (editingAddress) {
-      updateAddress(address.id, address);
-    } else {
-      addAddress(address);
-    }
+    try {
+      if (editingAddress) {
+        await updateAddress(
+          editingAddress.id,
+          address,
+        );
+      } else {
+        await createAddress(address);
+      }
 
-    navigation.goBack();
-};
+      navigation.goBack();
+    } catch (error) {
+      console.error(
+        'Failed to save address',
+        error,
+      );
+
+      Alert.alert(
+        'Error',
+        'Failed to save address.',
+      );
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-
       <StatusBar
         barStyle="dark-content"
         backgroundColor="#F8FBF9"
       />
 
       <ScrollView
-        contentContainerStyle={
-          styles.content
-        }
-        keyboardShouldPersistTaps="handled">
-
-        <Text style={styles.heading}>
-          Delivery Address
+        contentContainerStyle={styles.content}>
+        <Text style={styles.title}>
+          {editingAddress
+            ? 'Edit Address'
+            : 'Add New Address'}
         </Text>
 
-        <Text style={styles.label}>
-          Full Name <Text style={styles.required}>*</Text>
-        </Text>
-<TextInput
-  value={fullName}
-  onChangeText={text => {
-    setFullName(text);
-
-    const error =
-  text.trim().length > 0
-    ? ''
-    : 'Full name is required.';
-
-setFullNameError(error);
-  }}
-  placeholder="Enter full name"
-  style={[
-    styles.input,
-    fullNameError && styles.inputError,
-  ]}
-/>
-
-{fullNameError ? (
-  <Text style={styles.errorText}>{fullNameError}</Text>
-) : null}
-
-        <Text style={styles.label}>
-          Phone Number <Text style={styles.required}>*</Text>
+        <Text style={styles.section}>
+          Address Label
         </Text>
 
-        <TextInput
-          value={phoneNumber}
-          onChangeText={text => {
-            const value = text.replace(/\D/g, '');
-
-            setPhoneNumber(value);
-
-            let error = '';
-
-if (value.length === 0) {
-  error = 'Phone number is required.';
-} else if (!/^\d{10}$/.test(value)) {
-  error = 'Enter a valid 10-digit mobile number.';
-}
-
-setPhoneError(error);
-          }}
-          placeholder="10 digit mobile number"
-          keyboardType="number-pad"
-          maxLength={10}
-          style={[
-            styles.input,
-            phoneError && styles.inputError,
-          ]}
-        />
-
-{phoneError ? (
-  <Text style={styles.errorText}>{phoneError}</Text>
-) : null}
-
-        <Text style={styles.label}>
-          House / Flat No. <Text style={styles.required}>*</Text>
-        </Text>
-
-        <TextInput
-                  value={house}
-                  onChangeText={text => {
-                    setHouse(text);
-
-                    const error =
-  text.trim().length > 0
-    ? ''
-    : 'House / Flat number is required.';
-
-setHouseError(error);
-                  }}
-                  placeholder="Flat, House, Building"
-                  style={[
-                    styles.input,
-                    houseError && styles.inputError,
-                  ]}
-                />
-
-                {houseError ? (
-                  <Text style={styles.errorText}>{houseError}</Text>
-                ) : null}
-
-        <Text style={styles.label}>
-          Area / Locality <Text style={styles.required}>*</Text>
-        </Text>
-
-        <TextInput
-                  value={area}
-                 onChangeText={text => {
-                    setArea(text);
-
-                    const error =
-  text.trim().length > 0
-    ? ''
-    : 'Area / Locality is required.';
-
-setAreaError(error);
-                  }}
-                  placeholder="Area"
-                  style={[
-                    styles.input,
-                    areaError && styles.inputError,
-                  ]}
-                />
-
-                {areaError ? (
-                  <Text style={styles.errorText}>{areaError}</Text>
-                ) : null}
-
-        <Text style={styles.label}>
-          Landmark (Optional)
-        </Text>
-
-        <TextInput
-          value={landmark}
-          onChangeText={setLandmark}
-          placeholder="Nearby landmark"
-          style={styles.input}
-        />
-
-        <Text style={styles.label}>
-          City <Text style={styles.required}>*</Text>
-        </Text>
-
-        <TextInput
-                  value={city}
-                  onChangeText={text => {
-                    setCity(text);
-
-                    const error =
-  text.trim().length > 0
-    ? ''
-    : 'City is required.';
-
-setCityError(error);
-                  }}
-                  placeholder="City"
-                  style={[
-                    styles.input,
-                    cityError && styles.inputError,
-                  ]}
-                />
-
-                {cityError ? (
-                  <Text style={styles.errorText}>{cityError}</Text>
-                        ) : null}
-
-        <Text style={styles.label}>
-          PIN Code <Text style={styles.required}>*</Text>
-        </Text>
-
-        <TextInput
-          value={pinCode}
-          onChangeText={text => {
-            const value = text.replace(/\D/g, '');
-
-            setPinCode(value);
-
-            let error = '';
-
-if (value.length === 0) {
-  error = 'PIN code is required.';
-} else if (!/^\d{6}$/.test(value)) {
-  error = 'Enter a valid 6-digit PIN code.';
-}
-
-setPinCodeError(error);
-          }}
-          placeholder="6 digit PIN"
-          keyboardType="number-pad"
-          maxLength={6}
-          style={[
-            styles.input,
-            pinCodeError && styles.inputError,
-          ]}
-        />
-
-{pinCodeError ? (
-  <Text style={styles.errorText}>{pinCodeError}</Text>
-) : null}
-
-        <Text style={styles.sectionTitle}>
-          Address Type
-        </Text>
-
-        <View style={styles.typeContainer}>
-
-          <AddressTypeButton title="Home" />
-
-          <AddressTypeButton title="Office" />
-
-          <AddressTypeButton title="Other" />
-
+        <View style={styles.labelRow}>
+          {(['Home', 'Work', 'Other'] as const).map(
+            option => (
+              <Pressable
+                key={option}
+                style={
+                  label === option
+                    ? [
+                        styles.labelChip,
+                        styles.labelChipActive,
+                      ]
+                    : styles.labelChip
+                }
+                onPress={() =>
+                  setLabel(option)
+                }>
+                <Text
+                  style={
+                    label === option
+                      ? styles.labelTextActive
+                      : styles.labelText
+                  }>
+                  {option}
+                </Text>
+              </Pressable>
+            ),
+          )}
         </View>
 
-        <View style={styles.defaultRow}>
+        <Text style={styles.section}>
+          Contact Details
+        </Text>
 
-          <Text style={styles.defaultText}>
-            Set as Default Address
+        <TextInput
+          style={styles.input}
+          placeholder="Full Name"
+          value={fullName}
+          onChangeText={setFullName}
+        />
+
+        <TextInput
+          style={styles.input}
+          placeholder="Phone Number"
+          keyboardType="phone-pad"
+          value={phoneNumber}
+          onChangeText={setPhoneNumber}
+        />
+
+        <Text style={styles.section}>
+          Address
+        </Text>
+
+        <TextInput
+          style={styles.input}
+          placeholder="House / Flat / Building"
+          value={house}
+          onChangeText={setHouse}
+        />
+
+        <TextInput
+          style={styles.input}
+          placeholder="State"
+          value={area}
+          onChangeText={setArea}
+        />
+
+        <TextInput
+          style={styles.input}
+          placeholder="Landmark (optional)"
+          value={landmark}
+          onChangeText={setLandmark}
+        />
+
+        <TextInput
+          style={styles.input}
+          placeholder="City"
+          value={city}
+          onChangeText={setCity}
+        />
+
+        <TextInput
+          style={styles.input}
+          placeholder="PIN Code"
+          keyboardType="number-pad"
+          value={pinCode}
+          onChangeText={setPinCode}
+        />
+
+        <View style={styles.defaultRow}>
+          <Text style={styles.defaultLabel}>
+            Set as default address
           </Text>
 
           <Switch
             value={isDefault}
-            onValueChange={
-              setIsDefault
+            onValueChange={setIsDefault}
+            trackColor={{
+              false: '#D8DEDA',
+              true: '#8BD3A8',
+            }}
+            thumbColor={
+              isDefault
+                ? '#16794B'
+                : '#FFFFFF'
             }
           />
-
         </View>
 
         <Pressable
           style={styles.saveButton}
           onPress={handleSave}>
-
-          <Text style={styles.saveButtonText}>
-            Save Address
+          <Text style={styles.saveText}>
+            {editingAddress
+              ? 'Save Changes'
+              : 'Save Address'}
           </Text>
-
         </Pressable>
-
       </ScrollView>
-
     </SafeAreaView>
   );
 };
@@ -460,7 +353,6 @@ setPinCodeError(error);
 export default AddEditAddressScreen;
 
 const styles = StyleSheet.create({
-
   container: {
     flex: 1,
     backgroundColor: '#F8FBF9',
@@ -471,110 +363,86 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
 
-  heading: {
+  title: {
     fontSize: 28,
     fontWeight: '800',
     color: '#17231C',
     marginBottom: 24,
   },
 
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 8,
-    color: '#17231C',
-    marginTop: 12,
-  },
-
-  input: {
-    height: 52,
-    backgroundColor: '#FFF',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#DDE5DF',
-    paddingHorizontal: 15,
+  section: {
     fontSize: 15,
-  },
-
-  sectionTitle: {
-    fontSize: 16,
     fontWeight: '700',
-    marginTop: 24,
-    marginBottom: 15,
+    color: '#17231C',
+    marginTop: 18,
+    marginBottom: 10,
   },
 
-  typeContainer: {
+  labelRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    gap: 10,
   },
 
-  typeButton: {
-    flex: 1,
-    height: 46,
-    marginHorizontal: 4,
-    borderRadius: 12,
+  labelChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: '#DDE5DF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFF',
+    borderColor: '#D6DFDA',
+    backgroundColor: '#FFFFFF',
   },
 
-  selectedType: {
+  labelChipActive: {
     backgroundColor: '#16794B',
     borderColor: '#16794B',
   },
 
-  typeText: {
-    color: '#17231C',
+  labelText: {
+    color: '#516057',
     fontWeight: '600',
   },
 
-  selectedTypeText: {
-    color: '#FFF',
+  labelTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+
+  input: {
+    height: 54,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#DCE4E0',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    fontSize: 15,
+    marginBottom: 12,
   },
 
   defaultRow: {
-    marginTop: 28,
+    marginTop: 22,
+    marginBottom: 28,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
 
-  defaultText: {
-    fontSize: 15,
+  defaultLabel: {
+    fontSize: 16,
     fontWeight: '600',
+    color: '#17231C',
   },
 
   saveButton: {
-    marginTop: 35,
-    height: 56,
-    borderRadius: 14,
+    height: 54,
+    borderRadius: 12,
     backgroundColor: '#16794B',
     justifyContent: 'center',
     alignItems: 'center',
   },
 
-  saveButtonText: {
-    color: '#FFF',
-    fontSize: 17,
+  saveText: {
+    color: '#FFFFFF',
+    fontSize: 16,
     fontWeight: '700',
   },
-
-  required: {
-  color: '#D32F2F',
-},
-
-errorText: {
-  color: '#D32F2F',
-  fontSize: 12,
-  marginTop: 5,
-  marginLeft: 4,
-},
-
-inputError: {
-  borderColor: '#D32F2F',
-  borderWidth: 1.5,
-},
-
 });

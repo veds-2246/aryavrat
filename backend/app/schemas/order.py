@@ -4,6 +4,7 @@ from datetime import datetime
 
 
 class OrderCreate(BaseModel):
+    user_id: str
     product_id: str
     product_name: str
     quantity: float = Field(..., gt=0)

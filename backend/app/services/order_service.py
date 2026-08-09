@@ -42,6 +42,17 @@ class OrderService:
         return orders
 
     @staticmethod
+    async def get_orders_by_user(user_id: str):
+        orders = []
+
+        async for order in COLLECTION.find({"user_id": user_id}).sort("created_at", -1):
+            order["id"] = str(order["_id"])
+            del order["_id"]
+            orders.append(order)
+
+        return orders
+
+    @staticmethod
     async def get_order(order_id: str):
         order = await COLLECTION.find_one({"_id": ObjectId(order_id)})
 

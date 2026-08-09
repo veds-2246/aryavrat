@@ -1,6 +1,7 @@
 const API_BASE = 'http://10.0.2.2:8000';
 
 export async function createOrder(order: {
+  user_id: string;
   product_id: string;
   product_name: string;
   quantity: number;
@@ -25,8 +26,10 @@ export async function createOrder(order: {
   return response.json();
 }
 
-export async function fetchOrders() {
-  const response = await fetch(`${API_BASE}/api/v1/orders/`);
+export async function fetchOrders(userId: string) {
+  const response = await fetch(
+    `${API_BASE}/api/v1/orders?user_id=${userId}`,
+  );
 
   if (!response.ok) {
     throw new Error('Failed to fetch orders');

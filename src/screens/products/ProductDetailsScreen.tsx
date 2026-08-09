@@ -15,6 +15,8 @@ import {
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../../navigation/types';
 import {fetchProductById} from '../../services/ProductService';
+import {useAuth} from '../../context/AuthContext';
+import {useOrders} from '../../context/OrderContext';
 
 type Props = NativeStackScreenProps<
   RootStackParamList,
@@ -28,6 +30,8 @@ const ProductDetailsScreen = ({navigation, route}: Props) => {
   const [error, setError] = useState('');
 
   const productId = route.params.productId;
+  const {userId} = useAuth();
+  const {addOrder} = useOrders();
 
   useEffect(() => {
   loadProduct();
@@ -75,16 +79,27 @@ const loadProduct = async () => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    await createOrder({
-      product_id: product.id,
-      product_name: product.name,
-      quantity,
-      price_per_unit: product.price,
-      total_amount: totalAmount,
-      delivery_date: tomorrow.toISOString().split('T')[0],
-      delivery_address: 'Home Address',
-      type: 'buyOnce',
-    });
+    const createdOrder = await createOrder({
+  user_id: userId ?? '',
+  product_id: product.id,
+  product_name: product.name,
+  quantity,
+  price_per_unit: product.price,
+  total_amount: totalAmount,
+  delivery_date: tomorrow.toISOString().split('T')[0],
+  delivery_address: 'Home Address',
+  type: 'buyOnce',
+});
+
+addOrder({
+  id: createdOrder.id,
+  type: 'buyOnce',
+  productName: product.name,
+  quantity,
+  totalAmount,
+  status: 'pending',
+  deliveryDate: tomorrow.toISOString().split('T')[0],
+});
 
     Alert.alert(
       'Order Placed',

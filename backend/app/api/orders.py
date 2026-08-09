@@ -1,4 +1,6 @@
+from typing import Optional
 from fastapi import APIRouter, HTTPException
+
 from app.schemas.order import OrderCreate, OrderUpdate
 from app.services.order_service import OrderService
 
@@ -8,8 +10,16 @@ router = APIRouter(
 )
 
 
+@router.post("/")
+async def create_order(order: OrderCreate):
+    return await OrderService.create_order(order)
+
+
 @router.get("/")
-async def get_orders():
+async def get_orders(user_id: Optional[str] = None):
+    if user_id:
+        return await OrderService.get_orders_by_user(user_id)
+
     return await OrderService.get_all_orders()
 
 
@@ -23,19 +33,14 @@ async def get_order(order_id: str):
     return order
 
 
-@router.post("/")
-async def create_order(order: OrderCreate):
-    return await OrderService.create_order(order)
-
-
 @router.put("/{order_id}")
-async def update_order(order_id: str, order: OrderUpdate):
-    updated = await OrderService.update_order(order_id, order)
+async def update_order(order_id: str, order_update: OrderUpdate):
+    order = await OrderService.update_order(order_id, order_update)
 
-    if not updated:
+    if not order:
         raise HTTPException(status_code=404, detail="Order not found")
 
-    return updated
+    return order
 
 
 @router.delete("/{order_id}")

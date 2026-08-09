@@ -8,6 +8,8 @@ import {
   useAuth,
 } from '../../context/AuthContext';
 
+import { createOrGetUser } from '../../services/UserServices';
+
 import {
   KeyboardAvoidingView,
   Platform,
@@ -95,20 +97,22 @@ const OtpScreen = ({
      */
     setTimeout(() => {
       if (enteredOtp === '1234') {
-  login(phoneNumber)
-    .then(() => {
+  createOrGetUser(phoneNumber)
+    .then(async user => {
+      await login(phoneNumber, user.id);
+
       navigation.reset({
         index: 0,
         routes: [
           {
-            name: 'Home',
+            name: 'MainTabs',
           },
         ],
       });
     })
     .catch(error => {
       console.error(
-        'Failed to save login session:',
+        'Failed to complete login:',
         error,
       );
 

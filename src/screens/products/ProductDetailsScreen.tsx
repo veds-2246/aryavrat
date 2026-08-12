@@ -1,5 +1,4 @@
 import React, {useEffect, useState} from 'react';
-import {createOrder} from '../../services/OrderService';
 
 import {
   SafeAreaView,
@@ -15,8 +14,6 @@ import {
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../../navigation/types';
 import {fetchProductById} from '../../services/ProductService';
-import {useAuth} from '../../context/AuthContext';
-import {useOrders} from '../../context/OrderContext';
 
 type Props = NativeStackScreenProps<
   RootStackParamList,
@@ -30,12 +27,10 @@ const ProductDetailsScreen = ({navigation, route}: Props) => {
   const [error, setError] = useState('');
 
   const productId = route.params.productId;
-  const {userId} = useAuth();
-  const {addOrder} = useOrders();
 
   useEffect(() => {
   loadProduct();
-}, []);
+}, [productId]);
 
 const loadProduct = async () => {
   try {
@@ -68,60 +63,17 @@ const loadProduct = async () => {
   return `${litres} L`;
 };
 
-  const handleBuyOnce = async () => {
+  const handleBuyOnce = () => {
   if (!product) {
     return;
   }
 
-  try {
-    const totalAmount = product.price * quantity;
-
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    const createdOrder = await createOrder({
-  user_id: userId ?? '',
-  product_id: product.id,
-  product_name: product.name,
-  quantity,
-  price_per_unit: product.price,
-  total_amount: totalAmount,
-  delivery_date: tomorrow.toISOString().split('T')[0],
-  delivery_address: 'Home Address',
-  type: 'buyOnce',
-});
-
-addOrder({
-  id: createdOrder.id,
-  type: 'buyOnce',
-  productId: product.id,
-  productName: product.name,
-  quantity,
-  status: 'confirmed',
-  createdAt: new Date().toISOString(),
-  deliveryDate: tomorrow.toISOString().split('T')[0],
-  pricePerDelivery: product.price,
-  estimatedMonthlyCost: totalAmount,
-});
-
-    Alert.alert(
-      'Order Placed',
-      'Your order has been placed successfully!',
-      [
-        {
-          text: 'View Orders',
-          onPress: () => navigation.navigate('MainTabs', {
-            screen: 'Orders'
-          }),
-        },
-      ],
-    );
-  } catch (error) {
-    Alert.alert(
-      'Order Failed',
-      'Unable to place order. Please try again.',
-    );
-  }
+  navigation.navigate('CheckoutAddress', {
+    orderType: 'buyOnce',
+    productId: product.id,
+    quantity,
+    deliveryOption: 'tomorrow',
+  });
 };
 
   const handleSubscribe = () => {

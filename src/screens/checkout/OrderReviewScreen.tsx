@@ -1,5 +1,5 @@
 import { useOrders } from '../../context/OrderContext';
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   Pressable,
   SafeAreaView,
@@ -21,8 +21,8 @@ import {
 } from '../../navigation/types';
 
 import {
-  getProduct,
-} from '../../data/products';
+  fetchProductById,
+} from '../../services/ProductService';
 
 import {
   useNotifications,
@@ -38,22 +38,45 @@ const OrderReviewScreen = ({
   route,
 }: Props) => {
   const {
-    orderType,
-    productId,
-    quantity,
-    deliveryOption,
-    address,
-    addressId,
-  } = route.params;
-  const {
-  addOrder,
-} = useOrders();
+  orderType,
+  productId,
+  quantity,
+  deliveryOption,
+  address,
+  addressId,
+} = route.params;
 
-const {
-  addNotification,
-} = useNotifications();
+const [loading, setLoading] = useState(true);
+const [product, setProduct] = useState<any>(null);
 
-  const product = getProduct(productId);
+const {addOrder} = useOrders();
+const {addNotification} = useNotifications();
+
+useEffect(() => {
+  const loadProduct = async () => {
+    try {
+      const data = await fetchProductById(productId);
+      setProduct(data);
+    } catch (error) {
+      console.error('Failed to load product', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  loadProduct();
+}, [productId]);
+
+
+  if (loading) {
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.errorContainer}>
+        <Text>Loading order...</Text>
+      </View>
+    </SafeAreaView>
+  );
+}
 
   if (!product) {
     return (
@@ -80,8 +103,7 @@ const {
     );
   }
 
-  const subtotal =
-    product.pricePerLitre * quantity;
+  const subtotal = product.price * quantity;
 
   // Free delivery for now.
   // Later this can come from business settings.
@@ -223,7 +245,7 @@ const {
             <View style={styles.priceInfo}>
               <Text style={styles.productPrice}>₹{subtotal.toFixed(0)}</Text>
 
-              <Text style={styles.pricePerLitre}>₹{product.pricePerLitre}/L</Text>
+              <Text style={styles.pricePerLitre}>₹{product.price}/L</Text>
             </View>
 
           </View>
@@ -453,6 +475,8 @@ const {
     </SafeAreaView>
   );
 };
+
+
 
 export default OrderReviewScreen;
 

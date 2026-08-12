@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from app.database.mongodb import database
+from app.database.mongodb import ping_database
 from app.api.products import router as product_router
 from app.api.orders import router as order_router
 from app.api.users import router as user_router
@@ -36,3 +37,7 @@ async def database_health():
     return {
         "database": "connected"
     }
+
+@app.on_event("startup")
+async def startup():
+    await ping_database()

@@ -1,5 +1,7 @@
 import React, {useEffect, useMemo, useState, useCallback} from 'react';
 
+import {useAuth} from '../../context/AuthContext';
+
 import {
   SafeAreaView,
   StatusBar,
@@ -34,24 +36,29 @@ type OrdersRouteProp = RouteProp<MainTabParamList, 'Orders'>;
 const OrdersScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<OrdersRouteProp>();
+  const {userId} = useAuth();
 
   const [orders, setOrders] = useState<any[]>([]);
-const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   const [filter, setFilter] =
     useState<Filter>('all');
 
-  const loadOrders = useCallback(async () => {
+const loadOrders = useCallback(async () => {
+  if (!userId) {
+    return;
+  }
+
   try {
     setLoading(true);
-    const data = await fetchOrders();
+    const data = await fetchOrders(userId);
     setOrders(data);
   } catch (error) {
     console.error('Failed to load orders', error);
   } finally {
     setLoading(false);
   }
-}, []);
+}, [userId]);
 
 useEffect(() => {
   loadOrders();

@@ -1,5 +1,4 @@
-import React, {useState, useEffect} from 'react';
-
+import React, {useState, useEffect, useCallback} from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -16,113 +15,118 @@ import {
   NativeStackScreenProps,
 } from '@react-navigation/native-stack';
 
+import {useFocusEffect} from '@react-navigation/native';
+
 import {
   RootStackParamList,
 } from '../../navigation/types';
 
+import {useAuth} from '../../context/AuthContext';
+
 import {
-  useAddresses,
-} from '../../context/AddressContext';
+  fetchAddresses,
+} from '../../services/AddressService';
 
 type Props = NativeStackScreenProps<
   RootStackParamList,
   'CheckoutAddress'
 >;
 
+type BackendAddress = {
+  id: string;
+  user_id: string;
+  label: string;
+  full_name: string;
+  phone: string;
+  address_line: string;
+  landmark?: string;
+  city: string;
+  state: string;
+  pincode: string;
+  is_default: boolean;
+};
+
 const CheckoutAddressScreen = ({
   navigation,
   route,
 }: Props) => {
-  const {
-  addresses,
-  isHydrated,
-} = useAddresses();
+  const {userId} = useAuth();
 
-const [
-  selectedAddressId,
-  setSelectedAddressId,
-] = useState<string | null>(null);
+  const [addresses, setAddresses] = useState<BackendAddress[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-useEffect(() => {
-  if (!isHydrated) {
-    return;
-  }
+  const [selectedAddressId, setSelectedAddressId] =
+    useState<string | null>(null);
 
-  /*
-   * Keep the currently selected address
-   * if it still exists.
-   */
-  if (
-    selectedAddressId &&
-    addresses.some(
+  const [error, setError] = useState('');
+
+  const loadAddresses = useCallback(async () => {
+    if (!userId) {
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+
+      const data = await fetchAddresses(userId);
+
+      setAddresses(data);
+
+      if (data.length === 0) {
+        setSelectedAddressId(null);
+      } else {
+        const defaultAddress =
+          data.find((a: BackendAddress) => a.is_default===true);
+
+        setSelectedAddressId(
+          defaultAddress
+            ? defaultAddress.id
+            : data[0].id,
+        );
+      }
+    } catch (e) {
+      console.error(
+        'Failed to load addresses',
+        e,
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    loadAddresses();
+  }, [loadAddresses]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadAddresses();
+    }, [loadAddresses]),
+  );
+
+  const selectedAddress =
+    addresses.find(
       address =>
         address.id === selectedAddressId,
-    )
-  ) {
-    return;
-  }
-
-  /*
-   * Otherwise select the default address.
-   */
-  const defaultAddress =
-  addresses.find(
-    address => address.isDefault,
-  );
-
-if (defaultAddress) {
-  setSelectedAddressId(
-    defaultAddress.id,
-  );
-
-  return;
-}
-
-  /*
-   * Fallback to the first saved address
-   * if no default exists.
-   */
-  if (addresses.length > 0) {
-    setSelectedAddressId(
-      addresses[0].id,
     );
 
-    return;
-  }
+  const handleAddAddress = () => {
+    navigation.navigate(
+      'AddEditAddress',
+      {},
+    );
+  };
 
-  setSelectedAddressId(null);
-}, [
-  addresses,
-  isHydrated,
-  selectedAddressId,
-]);
-
-const selectedAddress =
-  addresses.find(
-    address =>
-      address.id === selectedAddressId,
-  );
-
-const handleAddAddress = () => {
-  navigation.navigate(
-    'AddEditAddress',
-    {},
-  );
-};
-
-const handleEditAddress = (
-  addressId: string,
-) => {
-  navigation.navigate(
-    'AddEditAddress',
-    {
-      addressId,
-    },
-  );
-};
-
-  const [error, setError] =
-    useState('');
+  const handleEditAddress = (
+    addressId: string,
+  ) => {
+    navigation.navigate(
+      'AddEditAddress',
+      {
+        addressId,
+      },
+    );
+  };
 
   const handleContinue = () => {
     if (!selectedAddress) {
@@ -134,20 +138,6 @@ const handleEditAddress = (
 
     setError('');
 
-    const address = {
-      fullName: selectedAddress.fullName,
-      phone: selectedAddress.phoneNumber,
-      house: selectedAddress.house,
-      area: selectedAddress.area,
-      // Ensure landmark is a string (DeliveryAddress expects a string)
-      landmark: selectedAddress.landmark ?? '',
-      city: selectedAddress.city,
-      pincode: selectedAddress.pinCode,
-    };
-
-    /*
-     * BUY ONCE
-     */
     if (
       route.params.orderType ===
         'buyOnce' &&
@@ -157,27 +147,21 @@ const handleEditAddress = (
         'OrderReview',
         {
           orderType: 'buyOnce',
-
           productId:
             route.params.productId,
-
           quantity:
             route.params.quantity,
-
           deliveryOption:
             route.params
               .deliveryOption,
-
-          address,
+          addressId:
+            selectedAddress.id,
         },
       );
 
       return;
     }
 
-    /*
-     * SUBSCRIPTION
-     */
     if (
       route.params.orderType ===
         'subscription' &&
@@ -189,26 +173,19 @@ const handleEditAddress = (
         {
           orderType:
             'subscription',
-
           productId:
             route.params.productId,
-
           quantity:
             route.params.quantity,
-
           schedule:
             route.params.schedule,
-
           selectedDays:
             route.params
               .selectedDays ?? [],
-
           startOption:
             route.params.startOption,
-
-          address,
-
-          addressId: selectedAddress.id,
+          addressId:
+            selectedAddress.id,
         },
       );
 
@@ -217,9 +194,7 @@ const handleEditAddress = (
   };
 
   return (
-    <SafeAreaView
-      style={styles.container}>
-
+    <SafeAreaView style={styles.container}>
       <StatusBar
         barStyle="dark-content"
         backgroundColor="#F8FBF9"
@@ -232,7 +207,6 @@ const handleEditAddress = (
             ? 'padding'
             : undefined
         }>
-
         <ScrollView
           contentContainerStyle={
             styles.content
@@ -241,18 +215,14 @@ const handleEditAddress = (
           showsVerticalScrollIndicator={
             false
           }>
-
           <Pressable
             style={styles.backButton}
             onPress={() =>
               navigation.goBack()
             }>
-
-            <Text
-              style={styles.backText}>
+            <Text style={styles.backText}>
               ‹
             </Text>
-
           </Pressable>
 
           <Text style={styles.step}>
@@ -265,13 +235,12 @@ const handleEditAddress = (
 
           <Text
             style={styles.subtitle}>
-            Enter the address where you'd
-            like your fresh milk delivered
-            every morning.
+            Select where you&apos;d
+            like your fresh milk
+            delivered every morning.
           </Text>
 
           <View style={styles.infoBox}>
-
             <Text
               style={styles.infoIcon}>
               🌅
@@ -281,7 +250,6 @@ const handleEditAddress = (
               style={
                 styles.infoContent
               }>
-
               <Text
                 style={
                   styles.infoTitle
@@ -293,177 +261,248 @@ const handleEditAddress = (
                 style={
                   styles.infoText
                 }>
-                Please provide an address
-                where morning delivery can
-                be received reliably.
+                Please provide an
+                address where morning
+                delivery can be
+                received reliably.
               </Text>
-
             </View>
-
           </View>
 
-          <Text style={styles.sectionTitle}>
-  Choose delivery address
-</Text>
+          <Text
+            style={styles.sectionTitle}>
+            Choose delivery address
+          </Text>
 
-{!isHydrated ? (
-  <View style={styles.addressMessageBox}>
-    <Text style={styles.addressMessageTitle}>
-      Loading addresses...
-    </Text>
-  </View>
-) : addresses.length === 0 ? (
-  <View style={styles.addressMessageBox}>
-
-    <Text style={styles.addressMessageTitle}>
-      No delivery address yet
-    </Text>
-
-    <Text style={styles.addressMessageText}>
-      Add an address to continue with your order.
-    </Text>
-
-    <Pressable
-      style={styles.addAddressButton}
-      onPress={handleAddAddress}>
-
-      <Text style={styles.addAddressButtonText}>
-        + Add Address
-      </Text>
-
-    </Pressable>
-
-  </View>
-) : (
-  <View>
-
-    {addresses.map(address => {
-      const isSelected =
-        address.id === selectedAddressId;
-
-      return (
-        <Pressable
-          key={address.id}
-          style={[
-            styles.addressCard,
-            isSelected
-              ? styles.selectedAddressCard
-              : undefined,
-          ]}
-          onPress={() => {
-              setSelectedAddressId(
-                    address.id,
-                    );
-                    
-                    setError('');
-                  }}>
-
-          <View style={styles.addressCardTop}>
-
+          {isLoading ? (
             <View
-              style={[
-                styles.radioOuter,
-                isSelected
-                  ? styles.radioOuterSelected
-                  : undefined,
-              ]}>
-
-              {isSelected ? (
-                <View
-                  style={styles.radioInner}
-                />
-              ) : null}
-
-            </View>
-
-            <View style={styles.addressDetails}>
-
-              <View style={styles.addressLabelRow}>
-
-                <Text style={styles.addressLabel}>
-                  {address.label}
-                </Text>
-
-                {address.isDefault ? (
-                  <View style={styles.defaultBadge}>
-                    <Text style={styles.defaultBadgeText}>
-                      DEFAULT
-                    </Text>
-                  </View>
-                ) : null}
-
-              </View>
-
-              <Text style={styles.addressName}>
-                {address.fullName}
-              </Text>
-
-              <Text style={styles.addressText}>
-                {address.house}, {address.area}
-              </Text>
-
-              {address.landmark ? (
-                <Text style={styles.addressText}>
-                  {address.landmark}
-                </Text>
-              ) : null}
-
-              <Text style={styles.addressText}>
-                {address.city} - {address.pinCode}
-              </Text>
-
-              <Text style={styles.addressPhone}>
-                +91 {address.phoneNumber}
-              </Text>
-
-            </View>
-
-            <Pressable
-              hitSlop={10}
-              onPress={() =>
-                handleEditAddress(
-                  address.id,
-                )
+              style={
+                styles.addressMessageBox
               }>
-
-              <Text style={styles.editAddressText}>
-                Edit
+              <Text
+                style={
+                  styles.addressMessageTitle
+                }>
+                Loading addresses...
+              </Text>
+            </View>
+          ) : addresses.length ===
+            0 ? (
+            <View
+              style={
+                styles.addressMessageBox
+              }>
+              <Text
+                style={
+                  styles.addressMessageTitle
+                }>
+                No delivery address
+                yet
               </Text>
 
-            </Pressable>
+              <Text
+                style={
+                  styles.addressMessageText
+                }>
+                Add an address to
+                continue with your
+                order.
+              </Text>
 
-          </View>
+              <Pressable
+                style={
+                  styles.addAddressButton
+                }
+                onPress={
+                  handleAddAddress
+                }>
+                <Text
+                  style={
+                    styles.addAddressButtonText
+                  }>
+                  + Add Address
+                </Text>
+              </Pressable>
+            </View>
+          ) : (
+            <View>
+              {addresses.map(
+                address => {
+                  const isSelected =
+                    address.id ===
+                    selectedAddressId;
 
-        </Pressable>
-      );
-    })}
+                  return (
+                    <Pressable
+                      key={address.id}
+                      style={[
+                        styles.addressCard,
+                        isSelected
+                          ? styles.selectedAddressCard
+                          : undefined,
+                      ]}
+                      onPress={() => {
+                        setSelectedAddressId(
+                          address.id,
+                        );
 
-    <Pressable
-      style={styles.addAnotherButton}
-      onPress={handleAddAddress}>
+                        setError('');
+                      }}>
+                      <View
+                        style={
+                          styles.addressCardTop
+                        }>
+                        <View
+                          style={[
+                            styles.radioOuter,
+                            isSelected
+                              ? styles.radioOuterSelected
+                              : undefined,
+                          ]}>
+                          {isSelected ? (
+                            <View
+                              style={
+                                styles.radioInner
+                              }
+                            />
+                          ) : null}
+                        </View>
 
-      <Text style={styles.addAnotherText}>
-        + Add New Address
-      </Text>
+                        <View
+                          style={
+                            styles.addressDetails
+                          }>
+                          <View
+                            style={
+                              styles.addressLabelRow
+                            }>
+                            <Text
+                              style={
+                                styles.addressLabel
+                              }>
+                              {
+                                address.label
+                              }
+                            </Text>
 
-    </Pressable>
+                            {address.is_default ? (
+                              <View
+                                style={
+                                  styles.defaultBadge
+                                }>
+                                <Text
+                                  style={
+                                    styles.defaultBadgeText
+                                  }>
+                                  DEFAULT
+                                </Text>
+                              </View>
+                            ) : null}
+                          </View>
 
-  </View>
-)}
+                          <Text
+                            style={
+                              styles.addressName
+                            }>
+                            {
+                              address.full_name
+                            }
+                          </Text>
+
+                          <Text
+                            style={
+                              styles.addressText
+                            }>
+                            {
+                              address.address_line
+                            }
+                            ,{' '}
+                            {
+                              address.state
+                            }
+                          </Text>
+
+                          {address.landmark ? (
+                            <Text
+                              style={
+                                styles.addressText
+                              }>
+                              {
+                                address.landmark
+                              }
+                            </Text>
+                          ) : null}
+
+                          <Text
+                            style={
+                              styles.addressText
+                            }>
+                            {
+                              address.city
+                            }{' '}
+                            -{' '}
+                            {
+                              address.pincode
+                            }
+                          </Text>
+
+                          <Text
+                            style={
+                              styles.addressPhone
+                            }>
+                            +91{' '}
+                            {
+                              address.phone
+                            }
+                          </Text>
+                        </View>
+
+                        <Pressable
+                          hitSlop={10}
+                          onPress={() =>
+                            handleEditAddress(
+                              address.id,
+                            )
+                          }>
+                          <Text
+                            style={
+                              styles.editAddressText
+                            }>
+                            Edit
+                          </Text>
+                        </Pressable>
+                      </View>
+                    </Pressable>
+                  );
+                },
+              )}
+
+              <Pressable
+                style={
+                  styles.addAnotherButton
+                }
+                onPress={
+                  handleAddAddress
+                }>
+                <Text
+                  style={
+                    styles.addAnotherText
+                  }>
+                  + Add New Address
+                </Text>
+              </Pressable>
+            </View>
+          )}
 
           {error !== '' && (
             <View
-              style={
-                styles.errorBox
-              }>
-
+              style={styles.errorBox}>
               <Text
                 style={
                   styles.errorText
                 }>
                 {error}
               </Text>
-
             </View>
           )}
 
@@ -474,316 +513,78 @@ const handleEditAddress = (
                 ? styles.continueButtonDisabled
                 : undefined,
             ]}
-            onPress={handleContinue}
+            onPress={
+              handleContinue
+            }
             disabled={
-              !isHydrated || !selectedAddress
+              isLoading ||
+              !selectedAddress
             }>
-
             <Text
               style={
                 styles.continueText
               }>
               Continue to Review
             </Text>
-
           </Pressable>
 
           <Text
             style={
               styles.securityText
             }>
-            🔒 Your delivery information
-            is used only to fulfil your
-            orders.
+            🔒 Your delivery
+            information is used only
+            to fulfil your orders.
           </Text>
-
         </ScrollView>
-
       </KeyboardAvoidingView>
-
     </SafeAreaView>
   );
 };
 
 export default CheckoutAddressScreen;
 
+// Keep all your existing styles below this line.
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8FBF9',
-  },
-
-  content: {
-    padding: 20,
-    paddingBottom: 45,
-  },
-
-  backButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2E9E5',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 25,
-  },
-
-  backText: {
-    fontSize: 34,
-    color: '#17231C',
-    lineHeight: 36,
-  },
-
-  step: {
-    color: '#16794B',
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1.2,
-  },
-
-  title: {
-    color: '#17231C',
-    fontSize: 29,
-    fontWeight: '800',
-    marginTop: 8,
-  },
-
-  subtitle: {
-    color: '#748078',
-    fontSize: 14,
-    lineHeight: 21,
-    marginTop: 8,
-  },
-
-  infoBox: {
-    flexDirection: 'row',
-    backgroundColor: '#EAF5EF',
-    borderRadius: 13,
-    padding: 14,
-    marginTop: 22,
-  },
-
-  infoIcon: {
-    fontSize: 22,
-    marginRight: 11,
-  },
-
-  infoContent: {
-    flex: 1,
-  },
-
-  infoTitle: {
-    color: '#285A40',
-    fontSize: 13,
-    fontWeight: '700',
-  },
-
-  infoText: {
-    color: '#60776A',
-    fontSize: 11,
-    lineHeight: 17,
-    marginTop: 3,
-  },
-
-  sectionTitle: {
-    color: '#17231C',
-    fontSize: 17,
-    fontWeight: '700',
-    marginTop: 28,
-    marginBottom: 14,
-  },
-
-  errorBox: {
-    backgroundColor: '#FFF0EE',
-    borderRadius: 10,
-    padding: 12,
-    marginTop: 8,
-  },
-
-  errorText: {
-    color: '#B34C42',
-    fontSize: 12,
-  },
-
-  continueButton: {
-    height: 56,
-    backgroundColor: '#16794B',
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 24,
-  },
-
-  continueButtonDisabled: {
-    opacity: 0.5,
-  },
-
-  continueText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-
-  securityText: {
-    color: '#89938D',
-    fontSize: 10,
-    lineHeight: 16,
-    textAlign: 'center',
-    marginTop: 15,
-  },
-
-  addressMessageBox: {
-  backgroundColor: '#FFFFFF',
-  borderWidth: 1,
-  borderColor: '#E2E9E5',
-  borderRadius: 14,
-  padding: 20,
-},
-
-addressMessageTitle: {
-  color: '#17231C',
-  fontSize: 15,
-  fontWeight: '700',
-},
-
-addressMessageText: {
-  color: '#748078',
-  fontSize: 12,
-  lineHeight: 18,
-  marginTop: 6,
-},
-
-addAddressButton: {
-  height: 48,
-  backgroundColor: '#16794B',
-  borderRadius: 10,
-  justifyContent: 'center',
-  alignItems: 'center',
-  marginTop: 18,
-},
-
-addAddressButtonText: {
-  color: '#FFFFFF',
-  fontSize: 14,
-  fontWeight: '700',
-},
-
-addressCard: {
-  backgroundColor: '#FFFFFF',
-  borderWidth: 1,
-  borderColor: '#E2E9E5',
-  borderRadius: 14,
-  padding: 16,
-  marginBottom: 12,
-},
-
-selectedAddressCard: {
-  borderColor: '#16794B',
-  borderWidth: 1.5,
-  backgroundColor: '#F7FCF9',
-},
-
-addressCardTop: {
-  flexDirection: 'row',
-  alignItems: 'flex-start',
-},
-
-radioOuter: {
-  width: 20,
-  height: 20,
-  borderRadius: 10,
-  borderWidth: 1.5,
-  borderColor: '#AAB4AE',
-  justifyContent: 'center',
-  alignItems: 'center',
-  marginTop: 2,
-},
-
-radioOuterSelected: {
-  borderColor: '#16794B',
-},
-
-radioInner: {
-  width: 10,
-  height: 10,
-  borderRadius: 5,
-  backgroundColor: '#16794B',
-},
-
-addressDetails: {
-  flex: 1,
-  marginLeft: 12,
-  marginRight: 10,
-},
-
-addressLabelRow: {
-  flexDirection: 'row',
-  alignItems: 'center',
-},
-
-addressLabel: {
-  color: '#17231C',
-  fontSize: 14,
-  fontWeight: '800',
-},
-
-defaultBadge: {
-  backgroundColor: '#EAF5EF',
-  paddingHorizontal: 7,
-  paddingVertical: 3,
-  borderRadius: 5,
-  marginLeft: 8,
-},
-
-defaultBadgeText: {
-  color: '#16794B',
-  fontSize: 8,
-  fontWeight: '800',
-},
-
-addressName: {
-  color: '#35433A',
-  fontSize: 13,
-  fontWeight: '700',
-  marginTop: 9,
-},
-
-addressText: {
-  color: '#6F7B73',
-  fontSize: 12,
-  lineHeight: 18,
-  marginTop: 2,
-},
-
-addressPhone: {
-  color: '#35433A',
-  fontSize: 12,
-  fontWeight: '600',
-  marginTop: 7,
-},
-
-editAddressText: {
-  color: '#16794B',
-  fontSize: 12,
-  fontWeight: '700',
-},
-
-addAnotherButton: {
-  height: 48,
-  borderWidth: 1,
-  borderColor: '#16794B',
-  borderRadius: 11,
-  justifyContent: 'center',
-  alignItems: 'center',
-  marginTop: 2,
-},
-
-addAnotherText: {
-  color: '#16794B',
-  fontSize: 13,
-  fontWeight: '700',
-},
-
+  container: {flex: 1},
+  content: {padding: 20},
+  backButton: {padding: 8},
+  backText: {fontSize: 24},
+  step: {fontSize: 12},
+  title: {fontSize: 28, fontWeight: '700'},
+  subtitle: {fontSize: 14},
+  infoBox: {flexDirection: 'row', marginVertical: 16},
+  infoIcon: {fontSize: 20},
+  infoContent: {marginLeft: 8},
+  infoTitle: {fontWeight: '700'},
+  infoText: {fontSize: 12},
+  sectionTitle: {fontSize: 18, fontWeight: '700', marginVertical: 12},
+  addressMessageBox: {padding: 16},
+  addressMessageTitle: {fontWeight: '700'},
+  addressMessageText: {fontSize: 12},
+  addAddressButton: {marginTop: 12},
+  addAddressButtonText: {fontWeight: '700'},
+  addressCard: {padding: 16, marginBottom: 12},
+  selectedAddressCard: {},
+  addressCardTop: {flexDirection: 'row'},
+  radioOuter: {width: 20, height: 20},
+  radioOuterSelected: {},
+  radioInner: {width: 10, height: 10},
+  addressDetails: {flex: 1, marginLeft: 12},
+  addressLabelRow: {flexDirection: 'row', alignItems: 'center'},
+  addressLabel: {fontWeight: '700'},
+  defaultBadge: {marginLeft: 8},
+  defaultBadgeText: {fontSize: 10},
+  addressName: {fontWeight: '700'},
+  addressText: {},
+  addressPhone: {},
+  editAddressText: {fontWeight: '700'},
+  addAnotherButton: {marginTop: 12},
+  addAnotherText: {fontWeight: '700'},
+  errorBox: {marginTop: 12},
+  errorText: {color: 'red'},
+  continueButton: {marginTop: 16},
+  continueButtonDisabled: {opacity: 0.5},
+  continueText: {fontWeight: '700'},
+  securityText: {marginTop: 12, textAlign: 'center'},
 });

@@ -13,9 +13,6 @@ import {
   NativeStackScreenProps,
 } from '@react-navigation/native-stack';
 
-import {
-  CommonActions,
-} from '@react-navigation/native';
 
 import {
   RootStackParamList,
@@ -47,34 +44,14 @@ const ConfirmationScreen = ({
   };
 
   const goHome = () => {
-    navigation.dispatch(
-      CommonActions.reset({
-        index: 0,
-        routes: [
-          {
-            name: 'Home',
-          },
-        ],
-      }),
-    );
-  };
+  navigation.navigate('MainTabs');
+};
 
   const viewOrders = () => {
-    // Reset to Home then open Orders tab
-    navigation.dispatch(
-      CommonActions.reset({
-        index: 0,
-        routes: [
-          {
-            name: 'Home',
-            state: {
-              routes: [{ name: 'Orders' }],
-            },
-          },
-        ],
-      }),
-    );
-  };
+  navigation.navigate('MainTabs', {
+    screen: 'Orders',
+  } as never);
+};
 
   return (
     <SafeAreaView style={styles.container}>

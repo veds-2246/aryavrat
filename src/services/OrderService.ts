@@ -2,6 +2,7 @@ const API_BASE = 'http://10.0.2.2:8000';
 
 export async function createOrder(order: {
   user_id: string;
+  address_id: string;
   product_id: string;
   product_name: string;
   quantity: number;

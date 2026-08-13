@@ -5,6 +5,7 @@ from datetime import datetime
 
 class OrderCreate(BaseModel):
     user_id: str
+    address_id: str
     product_id: str
     product_name: str
     quantity: float = Field(..., gt=0)
@@ -13,7 +14,6 @@ class OrderCreate(BaseModel):
     delivery_date: str
     delivery_address: str
     type: str = "buyOnce"
-
 
 class OrderUpdate(BaseModel):
     status: Optional[str] = None

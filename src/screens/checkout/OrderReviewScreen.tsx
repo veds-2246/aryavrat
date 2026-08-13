@@ -1,4 +1,3 @@
-import { useOrders } from '../../context/OrderContext';
 import React, {useEffect, useState} from 'react';
 import {
   Pressable,
@@ -11,6 +10,9 @@ import {
 } from 'react-native';
 
 import { AppOrder } from '../../types/orders';
+
+import { createOrder } from '../../services/OrderService';
+import { useAuth } from '../../context/AuthContext';
 
 import {
   NativeStackScreenProps,
@@ -46,10 +48,11 @@ const OrderReviewScreen = ({
   addressId,
 } = route.params;
 
+const {userId} = useAuth();
+
 const [loading, setLoading] = useState(true);
 const [product, setProduct] = useState<any>(null);
 
-const {addOrder} = useOrders();
 const {addNotification} = useNotifications();
 
 useEffect(() => {
@@ -144,40 +147,46 @@ useEffect(() => {
     );
   };
 
-  const handlePayment = () => {
-  const referenceId = `ORD-${Date.now()}`;
-  const deliveryDate = getDeliveryDate();
+  const handlePayment = async () => {
+  if (!userId || !addressId) {
+    return;
+  }
 
-  const order: AppOrder = {
-    id: referenceId,
-    type: 'buyOnce',
-    productId,
-    productName: product.name,
-    quantity,
-    status: 'confirmed',
-    createdAt: new Date().toISOString(),
-    deliveryDate,
-    addressId: addressId,
-    pricePerDelivery: total,
-  };
+  try {
+    const deliveryDate = new Date().toISOString().split('T')[0];
 
-  addOrder(order);
+    const createdOrder = await createOrder({
+      user_id: userId,
+      address_id: addressId,
+      product_id: product.id,
+      product_name: product.name,
+      quantity,
+      price_per_unit: product.price,
+      total_amount: total,
+      delivery_date: deliveryDate,
+delivery_address: address
+  ? `${address.house}, ${address.area}, ${address.city} - ${address.pincode}`
+  : 'Home Address',      type: 'buyOnce',
+    });
 
-  addNotification({
-  id: Date.now().toString(),
-  title: '📦 Order Confirmed',
-  message: `${quantity} L ${product.name} order placed successfully.`,
-  type: 'order',
-  createdAt: new Date().toLocaleString(),
-  isRead: false,
-});
+    addNotification({
+      id: Date.now().toString(),
+      title: '📦 Order Confirmed',
+      message: `${quantity} L ${product.name} order placed successfully.`,
+      type: 'order',
+      createdAt: new Date().toLocaleString(),
+      isRead: false,
+    });
 
-  navigation.navigate('Confirmation', {
-    type: 'buyOnce',
-    productId,
-    quantity,
-    referenceId,
-  });
+    navigation.navigate('Confirmation', {
+      type: 'buyOnce',
+      productId,
+      quantity,
+      referenceId: createdOrder.id,
+    });
+  } catch (error) {
+    console.error('Failed to create order', error);
+  }
 };
 
   return (

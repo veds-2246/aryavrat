@@ -5,6 +5,7 @@ from app.api.products import router as product_router
 from app.api.orders import router as order_router
 from app.api.users import router as user_router
 from app.api.addresses import router as address_router
+from app.api.subscriptions import router as subscription_router
 
 app = FastAPI(
     title="Aryavrat Milk Delivery API",
@@ -15,7 +16,7 @@ app.include_router(product_router)
 app.include_router(order_router)
 app.include_router(user_router)
 app.include_router(address_router)
-
+app.include_router(subscription_router)
 @app.get("/")
 async def root():
     return {

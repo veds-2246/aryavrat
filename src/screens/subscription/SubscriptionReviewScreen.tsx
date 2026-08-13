@@ -4,6 +4,10 @@ import {
     useOrders,
 } from '../../context/OrderContext';
 
+import {fetchProductById} from '../../services/ProductService';
+
+import {createSubscription} from '../../services/SubscriptionService';
+
 import {
   useNotifications, 
 } from '../../context/NotificationContext';
@@ -25,10 +29,6 @@ import {
 import {
   RootStackParamList,
 } from '../../navigation/types';
-
-import {
-  getProduct,
-} from '../../data/products';
 
 type Props = NativeStackScreenProps<
   RootStackParamList,
@@ -57,35 +57,52 @@ const {
   addNotification,
 } = useNotifications();
 
-  const product = getProduct(productId);
+const [product, setProduct] = React.useState<any>(null);
+const [loading, setLoading] = React.useState(true);
 
-  if (!product) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.errorContainer}>
+React.useEffect(() => {
+  const loadProduct = async () => {
+    try {
+      const data = await fetchProductById(productId);
+      setProduct(data);
+    } catch (error) {
+      console.error('Failed to load product', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-          <Text style={styles.errorTitle}>
-            Product unavailable
-          </Text>
+  loadProduct();
+}, [productId]);
 
-          <Pressable
-            onPress={() =>
-              navigation.goBack()
-            }>
+  if (loading) {
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorTitle}>Loading product...</Text>
+      </View>
+    </SafeAreaView>
+  );
+}
 
-            <Text style={styles.backLink}>
-              Go back
-            </Text>
+if (!product) {
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorTitle}>Product unavailable</Text>
 
-          </Pressable>
+        <Pressable
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}>
+          <Text style={styles.backText}>Go back</Text>
+        </Pressable>
+      </View>
+    </SafeAreaView>
+  );
+}
 
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  const pricePerDelivery =
-    product.pricePerLitre * quantity;
+const pricePerDelivery =
+  product.price * quantity;
 
   const formatQuantity = (
     litres: number,
@@ -145,68 +162,43 @@ const {
     pricePerDelivery *
     estimatedDeliveries;
 
-  const handleContinue = () => {
-  const referenceId =
-    `SUB-${Date.now()}`;
+  const handleContinue = async () => {
+  if (!addressId) {
+    return;
+  }
 
-  const startDate =
-    getStartDate();
+  try {
+    const startDate = new Date().toISOString().split('T')[0];
 
-  addOrder({
-    id: referenceId,
-
-    type: 'subscription',
-
-    productId,
-
-    productName:
-      product.name,
-
-    quantity,
-
-    status: 'confirmed',
-
-    subscriptionStatus: 'active',
-
-    nextDeliverySkipped: false,
-
-    createdAt:
-      new Date().toISOString(),
-
-    schedule,
-
-    selectedDays,
-
-    startDate,
-
-    addressId: addressId,
-
-    pricePerDelivery,
-
-    estimatedMonthlyCost,
-  });
-
-  addNotification({
-  id: Date.now().toString(),
-  title: '🥛 Subscription Created',
-  message: `${quantity} L ${product.name} subscription has been created successfully.`,
-  type: 'subscription',
-  createdAt: new Date().toLocaleString(),
-  isRead: false,
-});
-
-  navigation.navigate(
-    'Confirmation',
-    {
-      type: 'subscription',
-
-      productId,
-
+    const createdSubscription = await createSubscription({
+      user_id: '6a782e5829a9da4c16b3d3b6',
+      address_id: addressId,
+      product_id: product.id,
+      product_name: product.name,
       quantity,
+      schedule,
+      selected_days: schedule === 'custom' ? selectedDays : undefined,
+      start_date: startDate,
+    });
 
-      referenceId,
-    },
-  );
+    addNotification({
+      id: Date.now().toString(),
+      title: '🥛 Subscription Started',
+      message: `${quantity} L ${product.name} subscription has been started successfully.`,
+      type: 'subscription',
+      createdAt: new Date().toLocaleString(),
+      isRead: false,
+    });
+
+    navigation.navigate('Confirmation', {
+      type: 'subscription',
+      productId,
+      quantity,
+      referenceId: createdSubscription.id,
+    });
+  } catch (error) {
+    console.error('Failed to create subscription', error);
+  }
 };
 
   return (
@@ -279,7 +271,7 @@ const {
               </Text>
 
               <Text style={styles.productDetail}>
-                ₹{product.pricePerLitre}/L
+                ₹{product.price}/L
               </Text>
 
             </View>

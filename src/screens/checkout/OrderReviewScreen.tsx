@@ -12,6 +12,7 @@ import {
 import { AppOrder } from '../../types/orders';
 
 import { createOrder } from '../../services/OrderService';
+import {createSubscription} from '../../services/SubscriptionService';
 import { useAuth } from '../../context/AuthContext';
 
 import {
@@ -155,37 +156,68 @@ useEffect(() => {
   try {
     const deliveryDate = new Date().toISOString().split('T')[0];
 
-    const createdOrder = await createOrder({
-      user_id: userId,
-      address_id: addressId,
+    if (orderType === 'buyOnce') {
+      const createdOrder = await createOrder({
+        user_id: userId!,
+        address_id: addressId!,
+        product_id: product.id,
+        product_name: product.name,
+        quantity,
+        price_per_unit: product.price,
+        total_amount: total,
+        delivery_date: deliveryDate,
+        delivery_address: address
+          ? `${address.house}, ${address.area}, ${address.city} - ${address.pincode}`
+          : 'Home Address',
+        type: 'buyOnce',
+      });
+
+      addNotification({
+        id: Date.now().toString(),
+        title: '📦 Order Confirmed',
+        message: `${quantity} L ${product.name} order placed successfully.`,
+        type: 'order',
+        createdAt: new Date().toLocaleString(),
+        isRead: false,
+      });
+
+      navigation.navigate('Confirmation', {
+        type: 'buyOnce',
+        productId,
+        quantity,
+        referenceId: createdOrder.id,
+      });
+
+      return;
+    }
+
+    const createdSubscription = await createSubscription({
+      user_id: userId!,
+      address_id: addressId!,
       product_id: product.id,
       product_name: product.name,
       quantity,
-      price_per_unit: product.price,
-      total_amount: total,
-      delivery_date: deliveryDate,
-delivery_address: address
-  ? `${address.house}, ${address.area}, ${address.city} - ${address.pincode}`
-  : 'Home Address',      type: 'buyOnce',
+      schedule: 'daily',
+      start_date: deliveryDate,
     });
 
     addNotification({
       id: Date.now().toString(),
-      title: '📦 Order Confirmed',
-      message: `${quantity} L ${product.name} order placed successfully.`,
-      type: 'order',
+      title: '🥛 Subscription Started',
+      message: `${quantity} L ${product.name} subscription is now active.`,
+      type: 'subscription',
       createdAt: new Date().toLocaleString(),
       isRead: false,
     });
 
     navigation.navigate('Confirmation', {
-      type: 'buyOnce',
+      type: 'subscription',
       productId,
       quantity,
-      referenceId: createdOrder.id,
+      referenceId: createdSubscription.id,
     });
-  } catch (error) {
-    console.error('Failed to create order', error);
+    } catch (error) {
+    console.error('Failed to complete checkout', error);
   }
 };
 

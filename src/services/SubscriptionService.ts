@@ -32,26 +32,26 @@ export type UISubscription = {
 const mapSubscriptionFromApi = (
   subscription: BackendSubscription | Record<string, any>,
 ): UISubscription => {
-  const productName =
-    subscription.product_name ?? subscription.productName ?? 'Milk';
+  const api = subscription as Record<string, any>;
+
+  const productName = api.product_name ?? api.productName ?? 'Milk';
 
   return {
-    id: String(subscription.id),
+    id: String(api.id),
     type: 'subscription',
-    userId: subscription.user_id ?? subscription.userId,
-    addressId: subscription.address_id ?? subscription.addressId,
-    productId: subscription.product_id ?? subscription.productId,
+    userId: api.user_id ?? api.userId,
+    addressId: api.address_id ?? api.addressId,
+    productId: api.product_id ?? api.productId,
     productName,
-    quantity: Number(subscription.quantity ?? 0),
-    schedule: (subscription.schedule ?? 'daily') as 'daily' | 'custom',
-    selectedDays: subscription.selected_days ?? subscription.selectedDays ?? [],
-    startDate: subscription.start_date ?? subscription.startDate,
-    subscriptionStatus:
-      (subscription.status ??
-        subscription.subscriptionStatus ??
-        'active') as 'active' | 'paused' | 'cancelled',
-    nextDeliverySkipped:
-      subscription.next_delivery_skipped ?? subscription.nextDeliverySkipped,
+    quantity: Number(api.quantity ?? 0),
+    schedule: (api.schedule ?? 'daily') as 'daily' | 'custom',
+    selectedDays: api.selected_days ?? api.selectedDays ?? [],
+    startDate: api.start_date ?? api.startDate,
+    subscriptionStatus: (api.status ?? api.subscriptionStatus ?? 'active') as
+      | 'active'
+      | 'paused'
+      | 'cancelled',
+    nextDeliverySkipped: api.next_delivery_skipped ?? api.nextDeliverySkipped,
   };
 };
 
@@ -82,9 +82,7 @@ export async function createSubscription(subscription: {
 }
 
 export async function fetchSubscriptions(userId: string) {
-  const response = await fetch(
-    `${API_BASE}/subscriptions/?user_id=${userId}`,
-  );
+  const response = await fetch(`${API_BASE}/subscriptions/?user_id=${userId}`);
 
   if (!response.ok) {
     throw new Error('Failed to fetch subscriptions');
@@ -97,9 +95,7 @@ export async function fetchSubscriptions(userId: string) {
 export async function fetchSubscriptionById(
   subscriptionId: string,
 ): Promise<UISubscription> {
-  const response = await fetch(
-    `${API_BASE}/subscriptions/${subscriptionId}`,
-  );
+  const response = await fetch(`${API_BASE}/subscriptions/${subscriptionId}`);
 
   if (!response.ok) {
     throw new Error('Failed to fetch subscription');
@@ -110,18 +106,15 @@ export async function fetchSubscriptionById(
 }
 
 export async function pauseSubscription(subscriptionId: string) {
-  const response = await fetch(
-    `${API_BASE}/subscriptions/${subscriptionId}`,
-    {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        status: 'paused',
-      }),
+  const response = await fetch(`${API_BASE}/subscriptions/${subscriptionId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
     },
-  );
+    body: JSON.stringify({
+      status: 'paused',
+    }),
+  });
 
   if (!response.ok) {
     throw new Error('Failed to pause subscription');
@@ -132,18 +125,15 @@ export async function pauseSubscription(subscriptionId: string) {
 }
 
 export async function resumeSubscription(subscriptionId: string) {
-  const response = await fetch(
-    `${API_BASE}/subscriptions/${subscriptionId}`,
-    {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        status: 'active',
-      }),
+  const response = await fetch(`${API_BASE}/subscriptions/${subscriptionId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
     },
-  );
+    body: JSON.stringify({
+      status: 'active',
+    }),
+  });
 
   if (!response.ok) {
     throw new Error('Failed to resume subscription');
@@ -154,18 +144,15 @@ export async function resumeSubscription(subscriptionId: string) {
 }
 
 export async function cancelSubscription(subscriptionId: string) {
-  const response = await fetch(
-    `${API_BASE}/subscriptions/${subscriptionId}`,
-    {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        status: 'cancelled',
-      }),
+  const response = await fetch(`${API_BASE}/subscriptions/${subscriptionId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
     },
-  );
+    body: JSON.stringify({
+      status: 'cancelled',
+    }),
+  });
 
   if (!response.ok) {
     throw new Error('Failed to cancel subscription');
@@ -179,18 +166,15 @@ export async function updateSubscriptionQuantity(
   subscriptionId: string,
   quantity: number,
 ) {
-  const response = await fetch(
-    `${API_BASE}/subscriptions/${subscriptionId}`,
-    {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        quantity,
-      }),
+  const response = await fetch(`${API_BASE}/subscriptions/${subscriptionId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
     },
-  );
+    body: JSON.stringify({
+      quantity,
+    }),
+  });
 
   if (!response.ok) {
     throw new Error('Failed to update quantity');
@@ -205,19 +189,16 @@ export async function updateSubscriptionSchedule(
   schedule: 'daily' | 'custom',
   selectedDays?: string[],
 ) {
-  const response = await fetch(
-    `${API_BASE}/subscriptions/${subscriptionId}`,
-    {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        schedule,
-        selected_days: selectedDays,
-      }),
+  const response = await fetch(`${API_BASE}/subscriptions/${subscriptionId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
     },
-  );
+    body: JSON.stringify({
+      schedule,
+      selected_days: selectedDays,
+    }),
+  });
 
   if (!response.ok) {
     throw new Error('Failed to update schedule');

@@ -4,7 +4,7 @@ from app.database.mongodb import database
 from app.schemas.order import OrderCreate, OrderUpdate
 
 COLLECTION = database["orders"]
-
+SUBSCRIPTION_COLLECTION = database["subscriptions"]
 
 class OrderService:
 
@@ -45,10 +45,37 @@ class OrderService:
     async def get_orders_by_user(user_id: str):
         orders = []
 
+    # Buy Once orders
         async for order in COLLECTION.find({"user_id": user_id}).sort("created_at", -1):
             order["id"] = str(order["_id"])
             del order["_id"]
             orders.append(order)
+
+    # Subscription orders
+        async for sub in SUBSCRIPTION_COLLECTION.find({"user_id": user_id}).sort("created_at", -1):
+            sub["id"] = str(sub["_id"])
+            del sub["_id"]
+
+        # Convert subscription document into AppOrder format
+            orders.append({
+                "id": sub["id"],
+                "type": "subscription",
+                "productId": sub["product_id"],
+                "productName": sub["product_name"],
+                "quantity": sub["quantity"],
+                "schedule": sub["schedule"],
+                "selectedDays": sub.get("selected_days"),
+                "startDate": sub.get("start_date"),
+                "subscriptionStatus": sub.get("status", "active"),
+                "addressId": sub.get("address_id"),
+                "createdAt": sub.get("created_at"),
+            })
+
+    # Sort newest first
+        orders.sort(
+            key=lambda x: x.get("createdAt") or datetime.min,
+            reverse=True,
+        )
 
         return orders
 

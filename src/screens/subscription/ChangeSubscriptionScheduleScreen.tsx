@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 
 import {
   Alert,
@@ -20,16 +20,17 @@ import {
 } from '../../navigation/types';
 
 import {
-  useOrders,
-} from '../../context/OrderContext';
-
-import {
   SubscriptionSchedule,
 } from '../../types/orders';
 
 import {
   useNotifications,
 } from '../../context/NotificationContext';
+import {
+  fetchSubscriptionById,
+  updateSubscriptionSchedule,
+  UISubscription,
+} from '../../services/SubscriptionService';
 
 type Props = NativeStackScreenProps<
   RootStackParamList,
@@ -60,17 +61,16 @@ const ChangeSubscriptionScheduleScreen = ({
   navigation,
   route,
 }: Props) => {
-  const {
-    getOrderById,
-    updateSubscriptionSchedule,
-  } = useOrders();
-
   const { addNotification } = useNotifications();
 
-  const subscription =
-    getOrderById(
-      route.params.subscriptionId,
-    );
+  const [loading, setLoading] =
+    useState(true);
+  const [
+    subscription,
+    setSubscription,
+  ] = useState<UISubscription | null>(
+    null,
+  );
 
   const [
     selectedSchedule,
@@ -82,20 +82,62 @@ const ChangeSubscriptionScheduleScreen = ({
   const [
     selectedDays,
     setSelectedDays,
-  ] = useState<string[]>(
-    subscription?.selectedDays ?? [],
+  ] = useState<string[]>([]);
+
+  const loadSubscription = useCallback(
+    async () => {
+      try {
+        setLoading(true);
+        const data =
+          await fetchSubscriptionById(
+            route.params.subscriptionId,
+          );
+        setSubscription(data);
+        setSelectedSchedule(
+          data.schedule ?? 'daily',
+        );
+        setSelectedDays(
+          data.selectedDays ?? [],
+        );
+      } catch (error) {
+        console.error(
+          'Failed to load subscription',
+          error,
+        );
+        setSubscription(null);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [route.params.subscriptionId],
   );
 
+  useEffect(() => {
+    loadSubscription();
+  }, [loadSubscription]);
+
   const hasChanges =
-  selectedSchedule !== subscription?.schedule ||
-  JSON.stringify(selectedDays) !==
-    JSON.stringify(
-      subscription?.selectedDays ?? [],
+    selectedSchedule !==
+      subscription?.schedule ||
+    JSON.stringify(selectedDays) !==
+      JSON.stringify(
+        subscription?.selectedDays ?? [],
+      );
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.notFound}>
+          <Text style={styles.notFoundTitle}>
+            Loading subscription...
+          </Text>
+        </View>
+      </SafeAreaView>
     );
+  }
 
   if (
-    !subscription ||
-    subscription.type !== 'subscription'
+    !subscription
   ) {
     return (
       <SafeAreaView style={styles.container}>
@@ -152,7 +194,7 @@ const ChangeSubscriptionScheduleScreen = ({
     });
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (
       selectedSchedule === 'custom' &&
       selectedDays.length < 2
@@ -170,34 +212,44 @@ const ChangeSubscriptionScheduleScreen = ({
   JSON.stringify(subscription?.selectedDays ?? []) ===
     JSON.stringify(selectedDays);
 
-if (noChanges) {
-  navigation.goBack();
-  return;
-}
+    if (noChanges) {
+      navigation.goBack();
+      return;
+    }
 
-    updateSubscriptionSchedule(
-      subscription.id,
-      selectedSchedule,
+    const sortedDays =
       selectedSchedule === 'custom'
         ? [...selectedDays].sort(
-  (a, b) =>
-    DAY_ORDER.indexOf(a) -
-    DAY_ORDER.indexOf(b),
-)
-        : undefined,
-    );
+            (a, b) =>
+              DAY_ORDER.indexOf(a) -
+              DAY_ORDER.indexOf(b),
+          )
+        : undefined;
 
+    try {
+      await updateSubscriptionSchedule(
+        subscription.id,
+        selectedSchedule,
+        sortedDays,
+      );
+      await loadSubscription();
 
-    addNotification({
-  id: Date.now().toString(),
-  title: '📅 Delivery Schedule Updated',
-  message: `${subscription.productName} delivery schedule has been updated.`,
-  type: 'subscription',
-  createdAt: new Date().toLocaleString(),
-  isRead: false,
-});
+      addNotification({
+        id: Date.now().toString(),
+        title: '📅 Delivery Schedule Updated',
+        message: `${subscription.productName} delivery schedule has been updated.`,
+        type: 'subscription',
+        createdAt: new Date().toLocaleString(),
+        isRead: false,
+      });
 
-    navigation.goBack();
+      navigation.goBack();
+    } catch (error) {
+      Alert.alert(
+        'Error',
+        'Failed to update schedule. Please try again.',
+      );
+    }
   };
 
   return (

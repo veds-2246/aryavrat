@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from bson import ObjectId
 from app.database.mongodb import database
 from app.schemas.subscription import (
@@ -7,6 +7,56 @@ from app.schemas.subscription import (
 )
 
 COLLECTION = database["subscriptions"]
+
+DAY_INDEX = {
+    "Mon": 0,
+    "Tue": 1,
+    "Wed": 2,
+    "Thu": 3,
+    "Fri": 4,
+    "Sat": 5,
+    "Sun": 6,
+}
+
+
+def calculate_next_delivery_date(
+    schedule: str,
+    selected_days=None,
+    from_date: date | None = None,
+):
+    if from_date is None:
+        from_date = datetime.utcnow().date()
+
+    # Daily subscription
+    if schedule == "daily":
+        return (from_date + timedelta(days=1)).isoformat()
+
+    # Custom schedule
+    if not selected_days:
+        return (from_date + timedelta(days=1)).isoformat()
+
+    today_index = from_date.weekday()
+
+    future_days = sorted(
+        DAY_INDEX[day]
+        for day in selected_days
+        if day in DAY_INDEX
+    )
+
+    for day_index in future_days:
+        if day_index > today_index:
+            days_ahead = day_index - today_index
+            return (
+                from_date + timedelta(days=days_ahead)
+            ).isoformat()
+
+    # Wrap to next week
+    first_day = future_days[0]
+    days_ahead = 7 - today_index + first_day
+
+    return (
+        from_date + timedelta(days=days_ahead)
+    ).isoformat()
 
 
 class SubscriptionService:
@@ -21,8 +71,11 @@ class SubscriptionService:
         now = datetime.utcnow()
 
         # First delivery is tomorrow morning by default
-        next_delivery = (now + timedelta(days=1)).date().isoformat()
-
+        next_delivery = calculate_next_delivery_date(
+            data.get("schedule", "daily"),
+            data.get("selected_days"),
+            now.date(),
+    )
         data["status"] = "active"
         data["next_delivery_date"] = next_delivery
         data["created_at"] = now

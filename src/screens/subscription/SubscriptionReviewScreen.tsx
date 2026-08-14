@@ -1,16 +1,12 @@
 import React from 'react';
 
-import {
-    useOrders,
-} from '../../context/OrderContext';
+import { useOrders } from '../../context/OrderContext';
 
-import {fetchProductById} from '../../services/ProductService';
+import { fetchProductById } from '../../services/ProductService';
 
-import {createSubscription} from '../../services/SubscriptionService';
+import { createSubscription } from '../../services/SubscriptionService';
 
-import {
-  useNotifications, 
-} from '../../context/NotificationContext';
+import { useNotifications } from '../../context/NotificationContext';
 
 import {
   Pressable,
@@ -22,23 +18,13 @@ import {
   View,
 } from 'react-native';
 
-import {
-  NativeStackScreenProps,
-} from '@react-navigation/native-stack';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import {
-  RootStackParamList,
-} from '../../navigation/types';
+import { RootStackParamList } from '../../navigation/types';
 
-type Props = NativeStackScreenProps<
-  RootStackParamList,
-  'SubscriptionReview'
->;
+type Props = NativeStackScreenProps<RootStackParamList, 'SubscriptionReview'>;
 
-const SubscriptionReviewScreen = ({
-  navigation,
-  route,
-}: Props) => {
+const SubscriptionReviewScreen = ({ navigation, route }: Props) => {
   const {
     productId,
     quantity,
@@ -49,64 +35,58 @@ const SubscriptionReviewScreen = ({
     addressId,
   } = route.params;
 
-  const {
-  addOrder,
-} = useOrders();
+  const { addOrder } = useOrders();
 
-const {
-  addNotification,
-} = useNotifications();
+  const { addNotification } = useNotifications();
 
-const [product, setProduct] = React.useState<any>(null);
-const [loading, setLoading] = React.useState(true);
+  const [product, setProduct] = React.useState<any>(null);
+  const [loading, setLoading] = React.useState(true);
 
-React.useEffect(() => {
-  const loadProduct = async () => {
-    try {
-      const data = await fetchProductById(productId);
-      setProduct(data);
-    } catch (error) {
-      console.error('Failed to load product', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  React.useEffect(() => {
+    const loadProduct = async () => {
+      try {
+        const data = await fetchProductById(productId);
+        setProduct(data);
+      } catch (error) {
+        console.error('Failed to load product', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  loadProduct();
-}, [productId]);
+    loadProduct();
+  }, [productId]);
 
   if (loading) {
-  return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorTitle}>Loading product...</Text>
-      </View>
-    </SafeAreaView>
-  );
-}
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorTitle}>Loading product...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
-if (!product) {
-  return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorTitle}>Product unavailable</Text>
+  if (!product) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorTitle}>Product unavailable</Text>
 
-        <Pressable
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}>
-          <Text style={styles.backText}>Go back</Text>
-        </Pressable>
-      </View>
-    </SafeAreaView>
-  );
-}
+          <Pressable
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.backText}>Go back</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
-const pricePerDelivery =
-  product.price * quantity;
+  const pricePerDelivery = product.price * quantity;
 
-  const formatQuantity = (
-    litres: number,
-  ) => {
+  const formatQuantity = (litres: number) => {
     if (litres === 0.5) {
       return '500 ml';
     }
@@ -115,418 +95,287 @@ const pricePerDelivery =
   };
 
   const formatSchedule = () => {
-  if (schedule === 'daily') {
-    return 'Every day';
-  }
+    if (schedule === 'daily') {
+      return 'Every day';
+    }
 
-  return 'Custom days';
-};
+    return 'Custom days';
+  };
 
   const getStartDate = () => {
     const date = new Date();
 
-    const daysToAdd =
-      startOption === 'tomorrow'
-        ? 1
-        : 2;
+    const daysToAdd = startOption === 'tomorrow' ? 1 : 2;
 
-    date.setDate(
-      date.getDate() + daysToAdd,
-    );
+    date.setDate(date.getDate() + daysToAdd);
 
-    return date.toLocaleDateString(
-      'en-IN',
-      {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long',
-      },
-    );
+    return date.toLocaleDateString('en-IN', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+    });
   };
 
   const getStartLabel = () =>
     startOption === 'tomorrow' ? 'Tomorrow' : 'Day after tomorrow';
 
   const getEstimatedDeliveries = () => {
-  if (schedule === 'daily') {
-    return 30;
-  }
+    if (schedule === 'daily') {
+      return 30;
+    }
 
-  return selectedDays.length * 4;
-};
+    return selectedDays.length * 4;
+  };
 
-  const estimatedDeliveries =
-    getEstimatedDeliveries();
+  const estimatedDeliveries = getEstimatedDeliveries();
 
-  const estimatedMonthlyCost =
-    pricePerDelivery *
-    estimatedDeliveries;
+  const estimatedMonthlyCost = pricePerDelivery * estimatedDeliveries;
 
   const handleContinue = async () => {
-  if (!addressId) {
-    return;
-  }
+    if (!addressId) {
+      return;
+    }
 
-  try {
-    const startDate = new Date().toISOString().split('T')[0];
+    try {
+      const startDate = new Date().toISOString().split('T')[0];
 
-    const createdSubscription = await createSubscription({
-      user_id: '6a782e5829a9da4c16b3d3b6',
-      address_id: addressId,
-      product_id: product.id,
-      product_name: product.name,
-      quantity,
-      schedule,
-      selected_days: schedule === 'custom' ? selectedDays : undefined,
-      start_date: startDate,
-    });
+      const createdSubscription = await createSubscription({
+        user_id: '6a782e5829a9da4c16b3d3b6',
+        address_id: addressId,
+        product_id: product.id,
+        product_name: product.name,
+        quantity,
+        schedule,
+        selected_days: schedule === 'custom' ? selectedDays : undefined,
+        start_date: startDate,
+      });
 
-    addNotification({
-      id: Date.now().toString(),
-      title: '🥛 Subscription Started',
-      message: `${quantity} L ${product.name} subscription has been started successfully.`,
-      type: 'subscription',
-      createdAt: new Date().toLocaleString(),
-      isRead: false,
-    });
+      addNotification({
+        id: Date.now().toString(),
+        title: '🥛 Subscription Started',
+        message: `${quantity} L ${product.name} subscription has been started successfully.`,
+        type: 'subscription',
+        createdAt: new Date().toLocaleString(),
+        isRead: false,
+      });
 
-    navigation.navigate('Confirmation', {
-      type: 'subscription',
-      productId,
-      quantity,
-      referenceId: createdSubscription.id,
-    });
-  } catch (error) {
-    console.error('Failed to create subscription', error);
-  }
-};
+      navigation.navigate('Confirmation', {
+        type: 'subscription',
+        productId,
+        quantity,
+        referenceId: createdSubscription.id,
+      });
+    } catch (error) {
+      console.error('Failed to create subscription', error);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-
-      <StatusBar
-        barStyle="dark-content"
-        backgroundColor="#F8FBF9"
-      />
-
+      <StatusBar barStyle="dark-content" backgroundColor="#F8FBF9" />
       <ScrollView
-        contentContainerStyle={
-          styles.content
-        }
-        showsVerticalScrollIndicator={
-          false
-        }>
-
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
         <Pressable
           style={styles.backButton}
-          onPress={() =>
-            navigation.goBack()
-          }>
-
-          <Text style={styles.backText}>
-            ‹
-          </Text>
-
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.backText}>‹</Text>
         </Pressable>
 
-        <Text style={styles.step}>
-          SUBSCRIPTION REVIEW
-        </Text>
+        <Text style={styles.step}>SUBSCRIPTION REVIEW</Text>
 
-        <Text style={styles.title}>
-          Review your subscription
-        </Text>
+        <Text style={styles.title}>Review your subscription</Text>
 
         <Text style={styles.subtitle}>
-          Check your delivery schedule,
-          quantity and address before
-          continuing.
+          Check your delivery schedule, quantity and address before continuing.
         </Text>
 
-        <Text style={styles.sectionTitle}>
-          Your milk
-        </Text>
+        <Text style={styles.sectionTitle}>Your milk</Text>
 
         <View style={styles.card}>
-
           <View style={styles.productRow}>
-
             <View style={styles.productIcon}>
-
-              <Text style={styles.milkEmoji}>
-                🥛
-              </Text>
-
+              <Text style={styles.milkEmoji}>🥛</Text>
             </View>
 
             <View style={styles.productInfo}>
-
-              <Text style={styles.productName}>
-                {product.name}
-              </Text>
+              <Text style={styles.productName}>{product.name}</Text>
 
               <Text style={styles.productDetail}>
                 {formatQuantity(quantity)}
                 {' per delivery'}
               </Text>
 
-              <Text style={styles.productDetail}>
-                ₹{product.price}/L
-              </Text>
-
+              <Text style={styles.productDetail}>₹{product.price}/L</Text>
             </View>
 
             <View>
+              <Text style={styles.price}>₹{pricePerDelivery.toFixed(0)}</Text>
 
-              <Text style={styles.price}>
-                ₹{pricePerDelivery.toFixed(0)}
-              </Text>
-
-              <Text style={styles.perDelivery}>
-                per delivery
-              </Text>
-
+              <Text style={styles.perDelivery}>per delivery</Text>
             </View>
-
           </View>
-
         </View>
 
-        <Text style={styles.sectionTitle}>
-          Delivery schedule
-        </Text>
+        <Text style={styles.sectionTitle}>Delivery schedule</Text>
 
         <View style={styles.card}>
-
           <View style={styles.scheduleRow}>
-
             <View style={styles.scheduleIcon}>
-              <Text style={styles.iconText}>
-                🔄
-              </Text>
+              <Text style={styles.iconText}>🔄</Text>
             </View>
 
             <View style={styles.scheduleInfo}>
+              <Text style={styles.smallLabel}>Frequency</Text>
 
-              <Text style={styles.smallLabel}>
-                Frequency
-              </Text>
-
-              <Text style={styles.scheduleValue}>
-                {formatSchedule()}
-              </Text>
-
+              <Text style={styles.scheduleValue}>{formatSchedule()}</Text>
             </View>
-
           </View>
 
-          {schedule === 'custom' &&
-            selectedDays.length > 0 && (
-              <>
-                <View style={styles.divider} />
+          {schedule === 'custom' && selectedDays.length > 0 && (
+            <>
+              <View style={styles.divider} />
 
-                <View style={styles.detailLine}>
+              <View style={styles.detailLine}>
+                <Text style={styles.detailLabel}>Delivery days</Text>
 
-                  <Text style={styles.detailLabel}>
-                    Delivery days
-                  </Text>
-
-                  <Text style={styles.daysValue}>
-                    {selectedDays.join(', ')}
-                  </Text>
-
-                </View>
-              </>
-            )}
+                <Text style={styles.daysValue}>{selectedDays.join(', ')}</Text>
+              </View>
+            </>
+          )}
 
           <View style={styles.divider} />
 
           <View style={styles.detailLine}>
-
-            <Text style={styles.detailLabel}>
-              Delivery starts
-            </Text>
+            <Text style={styles.detailLabel}>Delivery starts</Text>
 
             <Text style={styles.detailValue}>
               {getStartLabel()} ({getStartDate()})
             </Text>
-
           </View>
 
           <View style={styles.detailLine}>
+            <Text style={styles.detailLabel}>Delivery time</Text>
 
-            <Text style={styles.detailLabel}>
-              Delivery time
+            <Text style={styles.detailValue}>
+              {schedule === 'daily'
+                ? 'Tomorrow Morning'
+                : 'Next selected delivery day'}
             </Text>
-
-            <Text style={styles.morningValue}>
-              🌅 Morning
-            </Text>
-
           </View>
-
         </View>
 
-        <Text style={styles.sectionTitle}>
-          Deliver to
-        </Text>
+        <Text style={styles.sectionTitle}>Deliver to</Text>
 
         <View style={styles.card}>
-
           <View style={styles.addressRow}>
-
-            <Text style={styles.locationIcon}>
-              📍
-            </Text>
+            <Text style={styles.locationIcon}>📍</Text>
 
             <View style={styles.addressInfo}>
-
               {address ? (
                 <>
                   <Text style={styles.addressName}>{address.fullName}</Text>
 
-                  <Text style={styles.addressText}>{address.house}, {address.area}</Text>
+                  <Text style={styles.addressText}>
+                    {address.house}, {address.area}
+                  </Text>
 
-                  {address.landmark !== '' && (<Text style={styles.addressText}>Near {address.landmark}</Text>)}
+                  {address.landmark !== '' && (
+                    <Text style={styles.addressText}>
+                      Near {address.landmark}
+                    </Text>
+                  )}
 
-                  <Text style={styles.addressText}>{address.city} - {address.pincode}</Text>
+                  <Text style={styles.addressText}>
+                    {address.city} - {address.pincode}
+                  </Text>
 
                   <Text style={styles.phone}>+91 {address.phone}</Text>
                 </>
               ) : (
                 <Text style={styles.addressText}>No address selected</Text>
               )}
-
             </View>
 
-            <Pressable
-              onPress={() =>
-                navigation.goBack()
-              }>
-
-              <Text style={styles.change}>
-                Change
-              </Text>
-
+            <Pressable onPress={() => navigation.goBack()}>
+              <Text style={styles.change}>Change</Text>
             </Pressable>
-
           </View>
-
         </View>
 
-        <Text style={styles.sectionTitle}>
-          Cost estimate
-        </Text>
+        <Text style={styles.sectionTitle}>Cost estimate</Text>
 
         <View style={styles.costCard}>
-
           <View style={styles.costRow}>
+            <Text style={styles.costLabel}>Per delivery</Text>
 
-            <Text style={styles.costLabel}>
-              Per delivery
-            </Text>
-
-            <Text style={styles.costValue}>
-              ₹{pricePerDelivery.toFixed(0)}
-            </Text>
-
+            <Text style={styles.costValue}>₹{pricePerDelivery.toFixed(0)}</Text>
           </View>
 
           <View style={styles.costRow}>
+            <Text style={styles.costLabel}>Est. deliveries / month</Text>
 
-            <Text style={styles.costLabel}>
-              Est. deliveries / month
-            </Text>
-
-            <Text style={styles.costValue}>
-              ~{estimatedDeliveries}
-            </Text>
-
+            <Text style={styles.costValue}>~{estimatedDeliveries}</Text>
           </View>
 
           <View style={styles.divider} />
 
           <View style={styles.costRow}>
-
             <View>
-
-              <Text style={styles.totalLabel}>
-                Estimated monthly cost
-              </Text>
+              <Text style={styles.totalLabel}>Estimated monthly cost</Text>
 
               <Text style={styles.estimateNote}>
                 Based on your selected schedule
               </Text>
-
             </View>
 
             <Text style={styles.totalValue}>
               ~₹
               {estimatedMonthlyCost.toFixed(0)}
             </Text>
-
           </View>
-
         </View>
 
         <View style={styles.paymentMethodCard}>
-
           <View style={styles.paymentOptionRow}>
-
             <View style={styles.upiIcon}>
               <Text style={styles.milkEmoji}>🔺</Text>
             </View>
 
             <View style={styles.paymentOptionInfo}>
               <Text style={styles.paymentOptionTitle}>UPI</Text>
-              <Text style={styles.paymentOptionSubtitle}>Pay securely using your UPI app</Text>
+              <Text style={styles.paymentOptionSubtitle}>
+                Pay securely using your UPI app
+              </Text>
             </View>
-
           </View>
-
         </View>
 
         <View style={styles.noticeBox}>
-
-          <Text style={styles.noticeIcon}>
-            ℹ️
-          </Text>
+          <Text style={styles.noticeIcon}>ℹ️</Text>
 
           <Text style={styles.noticeText}>
-            This is an estimated monthly
-            amount. Your actual amount depends
-            on completed deliveries, skipped
-            days and subscription changes.
+            This is an estimated monthly amount. Your actual amount depends on
+            completed deliveries, skipped days and subscription changes.
           </Text>
-
         </View>
 
-        <Pressable
-          style={styles.continueButton}
-          onPress={handleContinue}>
-
+        <Pressable style={styles.continueButton} onPress={handleContinue}>
           <View>
-
-            <Text style={styles.buttonSmall}>
-              Estimated
-            </Text>
+            <Text style={styles.buttonSmall}>Estimated</Text>
 
             <Text style={styles.buttonAmount}>
               ~₹
               {estimatedMonthlyCost.toFixed(0)}
               /month
             </Text>
-
           </View>
 
-          <Text style={styles.buttonText}>
-            Start subscription
-          </Text>
-
+          <Text style={styles.buttonText}>Start subscription</Text>
         </Pressable>
-
       </ScrollView>
-
     </SafeAreaView>
   );
 };

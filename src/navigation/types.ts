@@ -1,6 +1,6 @@
-import {DeliveryAddress} from '../types/checkout';
-import {NavigatorScreenParams} from '@react-navigation/native';
-import {MainTabParamList} from './MainTabs';
+import { DeliveryAddress } from '../types/checkout';
+import { NavigatorScreenParams } from '@react-navigation/native';
+import { MainTabParamList } from './MainTabs';
 
 export type RootStackParamList = {
   Splash: undefined;
@@ -11,7 +11,7 @@ export type RootStackParamList = {
     phoneNumber: string;
   };
 
-MainTabs: NavigatorScreenParams<MainTabParamList> | undefined;
+  MainTabs: NavigatorScreenParams<MainTabParamList> | undefined;
   ProductDetails: {
     productId: string;
   };
@@ -27,66 +27,50 @@ MainTabs: NavigatorScreenParams<MainTabParamList> | undefined;
   };
 
   SubscriptionStart: {
-  productId: string;
-  quantity: number;
-  schedule:
-    | 'daily'
-    | 'custom';
-  selectedDays: string[];
+    productId: string;
+    quantity: number;
+    schedule: 'daily' | 'custom';
+    selectedDays: string[];
   };
 
   SubscriptionReview: {
-  orderType: 'subscription';
-  productId: string;
-  quantity: number;
+    orderType: 'subscription';
+    productId: string;
+    quantity: number;
 
-  schedule:
-    | 'daily'
-    | 'custom';
+    schedule: 'daily' | 'custom';
 
-  selectedDays: string[];
+    selectedDays: string[];
 
-  startOption:
-    | 'tomorrow'
-    | 'dayAfterTomorrow';
+    startOption: 'tomorrow' | 'dayAfterTomorrow';
 
-  // Backwards compatible: previously we passed full address; new flow passes addressId
-  address?: DeliveryAddress;
-  addressId?: string;
+    // Backwards compatible: previously we passed full address; new flow passes addressId
+    address?: DeliveryAddress;
+    addressId?: string;
   };
 
   CheckoutAddress: {
-  orderType:
-    | 'buyOnce'
-    | 'subscription';
+    orderType: 'buyOnce' | 'subscription';
 
-  productId: string;
+    productId: string;
 
-  quantity: number;
+    quantity: number;
 
-  deliveryOption?:
-    | 'tomorrow'
-    | 'dayAfterTomorrow';
+    deliveryOption?: 'tomorrow' | 'dayAfterTomorrow';
 
-  schedule?:
-    | 'daily'
-    | 'custom';
+    schedule?: 'daily' | 'custom';
 
-  selectedDays?: string[];
+    selectedDays?: string[];
 
-  startOption?:
-    | 'tomorrow'
-    | 'dayAfterTomorrow';
-};
+    startOption?: 'tomorrow' | 'dayAfterTomorrow';
+  };
 
   OrderReview: {
     orderType: 'buyOnce';
     productId: string;
     quantity: number;
 
-    deliveryOption:
-      | 'tomorrow'
-      | 'dayAfterTomorrow';
+    deliveryOption: 'tomorrow' | 'dayAfterTomorrow';
 
     // Backwards compatible: allow passing full address or an addressId
     address?: DeliveryAddress;
@@ -98,6 +82,7 @@ MainTabs: NavigatorScreenParams<MainTabParamList> | undefined;
     productId: string;
     quantity: number;
     referenceId: string;
+    nextDeliveryDate?: string;
   };
 
   OrderDetails: {
@@ -107,17 +92,19 @@ MainTabs: NavigatorScreenParams<MainTabParamList> | undefined;
   ManageSubscription: {
     subscriptionId: string;
   };
- 
+
   ChangeSubscriptionSchedule: {
     subscriptionId: string;
   };
 
-  Addresses: {
-  mode?: 'manage' | 'select';
-  selectedAddressId?: string;
-  returnScreen?: keyof RootStackParamList;
-  returnSubscriptionId?: string;
-} | undefined;
+  Addresses:
+    | {
+        mode?: 'manage' | 'select';
+        selectedAddressId?: string;
+        returnScreen?: keyof RootStackParamList;
+        returnSubscriptionId?: string;
+      }
+    | undefined;
 
   AddEditAddress: {
     addressId?: string;

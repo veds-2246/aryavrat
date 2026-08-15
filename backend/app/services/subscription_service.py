@@ -160,6 +160,29 @@ class SubscriptionService:
 
         update_data["updated_at"] = datetime.utcnow()
 
+        # Recalculate next delivery date if schedule changes
+        new_schedule = update_data.get("schedule")
+        new_selected_days = update_data.get("selected_days")
+
+        if new_schedule is not None or new_selected_days is not None:
+            current = await COLLECTION.find_one(
+                {"_id": ObjectId(subscription_id)}
+            )
+
+            if current:
+                schedule = new_schedule or current.get("schedule", "daily")
+                selected_days = (
+                    new_selected_days
+                    if new_selected_days is not None
+                    else current.get("selected_days")
+                )
+
+                update_data["next_delivery_date"] = calculate_next_delivery_date(
+                    schedule,
+                    selected_days,
+                    datetime.utcnow().date(),
+                )
+
         await COLLECTION.update_one(
             {"_id": ObjectId(subscription_id)},
             {"$set": update_data},

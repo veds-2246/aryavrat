@@ -9,31 +9,36 @@ import {
   View,
 } from 'react-native';
 
-import {
-  NativeStackScreenProps,
-} from '@react-navigation/native-stack';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
+import { RootStackParamList } from '../../navigation/types';
 
-import {
-  RootStackParamList,
-} from '../../navigation/types';
+type Props = NativeStackScreenProps<RootStackParamList, 'Confirmation'>;
 
-type Props = NativeStackScreenProps<
-  RootStackParamList,
-  'Confirmation'
->;
-
-const ConfirmationScreen = ({
-  navigation,
-  route,
-}: Props) => {
-  const {
-    type,
-    quantity,
-    referenceId,
-  } = route.params;
+const ConfirmationScreen = ({ navigation, route }: Props) => {
+  const { type, quantity, referenceId, nextDeliveryDate } = route.params;
 
   const isSubscription = type === 'subscription';
+
+  const getDeliveryText = () => {
+    if (!isSubscription || !nextDeliveryDate) {
+      return 'Tomorrow Morning';
+    }
+
+    const deliveryDate = new Date(nextDeliveryDate);
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const isTomorrow = deliveryDate.toDateString() === tomorrow.toDateString();
+
+    if (isTomorrow) {
+      return 'Tomorrow Morning';
+    }
+
+    return `${deliveryDate.toLocaleDateString('en-IN', {
+      weekday: 'long',
+    })} Morning`;
+  };
 
   const formatQuantity = (litres: number) => {
     if (litres === 0.5) {
@@ -44,31 +49,25 @@ const ConfirmationScreen = ({
   };
 
   const goHome = () => {
-  navigation.navigate('MainTabs');
-};
+    navigation.navigate('MainTabs');
+  };
 
   const viewOrders = () => {
-  navigation.navigate('MainTabs', {
-    screen: 'Orders',
-  } as never);
-};
+    navigation.navigate('MainTabs', {
+      screen: 'Orders',
+    } as never);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar
-        barStyle="dark-content"
-        backgroundColor="#F8FBF9"
-      />
+      <StatusBar barStyle="dark-content" backgroundColor="#F8FBF9" />
 
       <View style={styles.content}>
-
         <View style={styles.successCircle}>
           <Text style={styles.checkmark}>✓</Text>
         </View>
 
-        <Text style={styles.successLabel}>
-          SUCCESS
-        </Text>
+        <Text style={styles.successLabel}>SUCCESS</Text>
 
         <Text style={styles.title}>
           {isSubscription
@@ -83,7 +82,6 @@ const ConfirmationScreen = ({
         </Text>
 
         <View style={styles.card}>
-
           <View style={styles.row}>
             <Text style={styles.label}>Order ID</Text>
             <Text style={styles.reference}>{referenceId}</Text>
@@ -93,45 +91,27 @@ const ConfirmationScreen = ({
 
           <View style={styles.row}>
             <Text style={styles.label}>Estimated delivery</Text>
-            <Text style={styles.value}>Tomorrow Morning</Text>
+            <Text style={styles.value}>{getDeliveryText()}</Text>
           </View>
-
         </View>
 
         <View style={styles.infoBox}>
-
           <Text style={styles.infoIcon}>📦</Text>
 
           <Text style={styles.infoText}>
             You can view or manage your orders from the Orders screen.
           </Text>
-
         </View>
 
         <View style={styles.bottomArea}>
-
-          <Pressable
-            style={styles.ordersButton}
-            onPress={viewOrders}>
-
-            <Text style={styles.ordersButtonText}>
-              View Orders
-            </Text>
-
+          <Pressable style={styles.ordersButton} onPress={viewOrders}>
+            <Text style={styles.ordersButtonText}>View Orders</Text>
           </Pressable>
 
-          <Pressable
-            style={styles.homeButton}
-            onPress={goHome}>
-
-            <Text style={styles.homeButtonText}>
-              Continue Shopping
-            </Text>
-
+          <Pressable style={styles.homeButton} onPress={goHome}>
+            <Text style={styles.homeButtonText}>Continue Shopping</Text>
           </Pressable>
-
         </View>
-
       </View>
     </SafeAreaView>
   );

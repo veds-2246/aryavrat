@@ -12,6 +12,7 @@ export type BackendSubscription = {
   start_date?: string;
   status?: 'active' | 'paused' | 'cancelled';
   next_delivery_skipped?: boolean;
+  next_delivery_date?: string;
 };
 
 export type UISubscription = {
@@ -27,6 +28,7 @@ export type UISubscription = {
   startDate?: string;
   subscriptionStatus: 'active' | 'paused' | 'cancelled';
   nextDeliverySkipped?: boolean;
+  nextDeliveryDate?: string;
 };
 
 const mapSubscriptionFromApi = (
@@ -52,6 +54,7 @@ const mapSubscriptionFromApi = (
       | 'paused'
       | 'cancelled',
     nextDeliverySkipped: api.next_delivery_skipped ?? api.nextDeliverySkipped,
+    nextDeliveryDate: api.next_delivery_date ?? api.nextDeliveryDate,
   };
 };
 

@@ -164,6 +164,7 @@ const SubscriptionReviewScreen = ({ navigation, route }: Props) => {
         productId,
         quantity,
         referenceId: createdSubscription.id,
+        nextDeliveryDate: createdSubscription.nextDeliveryDate,
       });
     } catch (error) {
       console.error('Failed to create subscription', error);

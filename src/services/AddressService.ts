@@ -23,20 +23,30 @@ export async function fetchAddresses(userId: string) {
     throw new Error('Failed to fetch addresses');
   }
 
-  return response.json();
-}
+  const data = await response.json();
 
+  return data.map((addr: any) => ({
+    id: addr.id,
+    label: addr.label,
+    fullName: addr.full_name,
+    phone: addr.phone,
+    house: addr.address_line,
+    area: addr.city,
+    landmark: addr.landmark ?? '',
+    city: addr.city,
+    state: addr.state,
+    pincode: addr.pincode,
+    isDefault: addr.is_default,
+  }));
+}
 export async function createAddress(address: Address) {
-  const response = await fetch(
-    `${API_BASE}/api/v1/addresses/`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(address),
+  const response = await fetch(`${API_BASE}/api/v1/addresses/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
     },
-  );
+    body: JSON.stringify(address),
+  });
 
   const data = await response.json();
 
@@ -48,20 +58,14 @@ export async function createAddress(address: Address) {
   return data;
 }
 
-export async function updateAddress(
-  id: string,
-  address: Partial<Address>,
-) {
-  const response = await fetch(
-    `${API_BASE}/api/v1/addresses/${id}`,
-    {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(address),
+export async function updateAddress(id: string, address: Partial<Address>) {
+  const response = await fetch(`${API_BASE}/api/v1/addresses/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
     },
-  );
+    body: JSON.stringify(address),
+  });
 
   if (!response.ok) {
     throw new Error('Failed to update address');
@@ -71,16 +75,37 @@ export async function updateAddress(
 }
 
 export async function deleteAddress(id: string) {
-  const response = await fetch(
-    `${API_BASE}/api/v1/addresses/${id}`,
-    {
-      method: 'DELETE',
-    },
-  );
+  const response = await fetch(`${API_BASE}/api/v1/addresses/${id}`, {
+    method: 'DELETE',
+  });
 
   if (!response.ok) {
     throw new Error('Failed to delete address');
   }
 
   return response.json();
+}
+
+export async function fetchAddressById(addressId: string) {
+  const response = await fetch(`${API_BASE}/api/v1/addresses/${addressId}`);
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch address');
+  }
+
+  const data = await response.json();
+
+  return {
+    id: data.id,
+    fullName: data.full_name,
+    phone: data.phone,
+    house: data.address_line,
+    area: data.city,
+    landmark: data.landmark ?? '',
+    city: data.city,
+    state: data.state,
+    pincode: data.pincode,
+    label: data.label,
+    isDefault: data.is_default,
+  };
 }

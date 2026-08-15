@@ -210,3 +210,25 @@ export async function updateSubscriptionSchedule(
   const data = await response.json();
   return mapSubscriptionFromApi(data);
 }
+
+export async function updateSubscriptionAddress(
+  subscriptionId: string,
+  addressId: string,
+) {
+  const response = await fetch(`${API_BASE}/subscriptions/${subscriptionId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      address_id: addressId,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to update subscription address');
+  }
+
+  const data = await response.json();
+  return mapSubscriptionFromApi(data);
+}

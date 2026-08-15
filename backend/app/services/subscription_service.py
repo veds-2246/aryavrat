@@ -59,6 +59,29 @@ def calculate_next_delivery_date(
     ).isoformat()
 
 
+def calculate_delivery_after(
+    schedule: str,
+    selected_days=None,
+    current_delivery_date: str | None = None,
+):
+    """
+    Returns the delivery date after the current scheduled delivery.
+    Used when user skips the next delivery.
+    """
+    if current_delivery_date:
+        from_date = datetime.strptime(
+            current_delivery_date,
+            "%Y-%m-%d",
+        ).date()
+    else:
+        from_date = datetime.utcnow().date()
+
+    return calculate_next_delivery_date(
+        schedule,
+        selected_days,
+        from_date,
+    )
+
 class SubscriptionService:
 
     @staticmethod
@@ -141,6 +164,34 @@ class SubscriptionService:
             {"_id": ObjectId(subscription_id)},
             {"$set": update_data},
         )
+
+        return await SubscriptionService.get_subscription(
+            subscription_id
+        )
+
+    @staticmethod
+    async def skip_next_delivery(subscription_id: str):
+        subscription = await COLLECTION.find_one(
+        {"_id": ObjectId(subscription_id)}
+    )
+
+        if not subscription:
+            return None
+        new_delivery = calculate_delivery_after(
+        subscription.get("schedule", "daily"),
+        subscription.get("selected_days"),
+        subscription.get("next_delivery_date"),
+    )
+
+        await COLLECTION.update_one(
+        {"_id": ObjectId(subscription_id)},
+        {
+            "$set": {
+                "next_delivery_date": new_delivery,
+                "updated_at": datetime.utcnow(),
+            }
+        },
+    )
 
         return await SubscriptionService.get_subscription(
             subscription_id

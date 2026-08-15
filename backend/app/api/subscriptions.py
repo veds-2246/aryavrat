@@ -43,6 +43,15 @@ async def update_subscription(subscription_id: str, subscription_update: Subscri
 
     return updated
 
+@router.put("/{subscription_id}/skip", response_model=SubscriptionResponse)
+async def skip_next_delivery(subscription_id: str):
+    updated = await SubscriptionService.skip_next_delivery(subscription_id)
+
+    if not updated:
+        raise HTTPException(status_code=404, detail="Subscription not found")
+
+    return updated
+
 
 @router.delete("/{subscription_id}")
 async def delete_subscription(subscription_id: str):

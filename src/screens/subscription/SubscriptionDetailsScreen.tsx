@@ -47,14 +47,20 @@ const SubscriptionDetailsScreen: React.FC = () => {
   const { getAddressById } = useAddresses();
 
   const [loading, setLoading] = React.useState(true);
-  const [subscription, setSubscription] =
-    React.useState<UISubscription | null>(null);
+  const [subscription, setSubscription] = React.useState<UISubscription | null>(
+    null,
+  );
   const [showQuantityModal, setShowQuantityModal] = React.useState(false);
 
   const loadSubscription = React.useCallback(async () => {
     try {
       setLoading(true);
       const data = await fetchSubscriptionById(subscriptionId);
+      console.log('SUBSCRIPTION DETAILS:', {
+        schedule: data.schedule,
+        selectedDays: data.selectedDays,
+        nextDeliveryDate: data.nextDeliveryDate,
+      });
       setSubscription(data);
     } catch (error) {
       console.error('Failed to load subscription', error);
@@ -126,6 +132,20 @@ const SubscriptionDetailsScreen: React.FC = () => {
   const formatQuantity = (litres: number) => {
     if (litres === 0.5) return '500 ml';
     return `${litres} L`;
+  };
+
+  const formatNextDelivery = (dateString?: string) => {
+    if (!dateString) {
+      return 'Scheduled';
+    }
+
+    const [year, month, day] = dateString.split('-').map(Number);
+
+    const date = new Date(year, month - 1, day);
+
+    return `${date.toLocaleDateString('en-US', {
+      weekday: 'long',
+    })} Morning`;
   };
 
   const handlePauseResume = () => {
@@ -308,10 +328,7 @@ const SubscriptionDetailsScreen: React.FC = () => {
 
       setShowQuantityModal(false);
     } catch (error) {
-      Alert.alert(
-        'Error',
-        'Failed to update quantity. Please try again.',
-      );
+      Alert.alert('Error', 'Failed to update quantity. Please try again.');
     }
   };
 
@@ -446,9 +463,7 @@ const SubscriptionDetailsScreen: React.FC = () => {
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Next delivery</Text>
             <Text style={styles.infoValue}>
-              {subscription.nextDeliverySkipped
-                ? `${subscription.startDate ?? 'Tomorrow'} (Skipped)`
-                : subscription.startDate ?? 'Scheduled'}
+              {formatNextDelivery(subscription.nextDeliveryDate)}
             </Text>
           </View>
 

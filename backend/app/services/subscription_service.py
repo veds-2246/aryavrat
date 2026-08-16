@@ -92,6 +92,9 @@ class SubscriptionService:
             data = subscription.dict()
 
         now = datetime.utcnow()
+        
+        if data.get("schedule") == "daily":
+            data.pop("selected_days", None)
 
         # First delivery is tomorrow morning by default
         next_delivery = calculate_next_delivery_date(
@@ -160,6 +163,82 @@ class SubscriptionService:
 
         update_data["updated_at"] = datetime.utcnow()
 
+        new_schedule = update_data.get("schedule")
+        new_selected_days = update_data.get("selected_days")
+
+        unset_data = {}
+
+        if new_schedule is not None or new_selected_days is not None:
+            current = await COLLECTION.find_one(
+                {"_id": ObjectId(subscription_id)}
+            )
+
+            if current:
+                final_schedule = (
+                    new_schedule
+                    or current.get("schedule", "daily")
+               )
+
+                if final_schedule == "daily":
+                    # Daily subscriptions do not use selected days.
+                    update_data.pop("selected_days", None)
+                    unset_data["selected_days"] = ""
+
+                    update_data["next_delivery_date"] = (
+                        datetime.utcnow().date()
+                        + timedelta(days=1)
+                    ).isoformat()
+
+                else:
+                    selected_days = (
+                        new_selected_days
+                        if new_selected_days is not None
+                        else current.get("selected_days")
+                    )
+
+                    update_data["next_delivery_date"] = (
+                        calculate_next_delivery_date(
+                            final_schedule,
+                            selected_days,
+                            datetime.utcnow().date(),
+                        )
+                    )
+
+        update_operation = {
+            "$set": update_data,
+        }
+
+        if unset_data:
+            update_operation["$unset"] = unset_data
+
+        await COLLECTION.update_one(
+            {"_id": ObjectId(subscription_id)},
+            update_operation,
+        )
+
+        return await SubscriptionService.get_subscription(
+            subscription_id
+        )
+
+    @staticmethod
+    async def update_subscription(
+        subscription_id: str,
+        subscription_update: SubscriptionUpdate,
+    ):
+        try:
+            raw = subscription_update.model_dump()
+        except AttributeError:
+            raw = subscription_update.dict()
+
+        update_data = {
+            k: v
+            for k, v in raw.items()
+            if v is not None
+        }
+
+        update_data["updated_at"] = datetime.utcnow()
+
+        # Recalculate next delivery date if schedule changes
         # Recalculate next delivery date if schedule changes
         new_schedule = update_data.get("schedule")
         new_selected_days = update_data.get("selected_days")
@@ -171,21 +250,41 @@ class SubscriptionService:
 
             if current:
                 schedule = new_schedule or current.get("schedule", "daily")
-                selected_days = (
-                    new_selected_days
-                    if new_selected_days is not None
-                    else current.get("selected_days")
-                )
 
-                update_data["next_delivery_date"] = calculate_next_delivery_date(
-                    schedule,
-                    selected_days,
-                    datetime.utcnow().date(),
-                )
+                if schedule == "daily":
+                # Daily subscriptions do not use selected days.
+                    update_data.pop("selected_days", None)
+                    update_data["next_delivery_date"] = (
+                        datetime.utcnow().date() + timedelta(days=1)
+                    ).isoformat()
+                else:
+                    selected_days = (
+                        new_selected_days
+                        if new_selected_days is not None
+                        else current.get("selected_days")
+                    )
+
+                    update_data["next_delivery_date"] = calculate_next_delivery_date(
+                        schedule,
+                        selected_days,
+                        datetime.utcnow().date(),
+                    )
+
+        unset_data = {}
+
+        if update_data.get("schedule") == "daily":
+            unset_data["selected_days"] = ""
+
+        update_operation = {
+            "$set": update_data,
+        }
+
+        if unset_data:
+            update_operation["$unset"] = unset_data
 
         await COLLECTION.update_one(
             {"_id": ObjectId(subscription_id)},
-            {"$set": update_data},
+            update_operation,
         )
 
         return await SubscriptionService.get_subscription(

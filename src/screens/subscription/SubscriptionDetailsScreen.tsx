@@ -20,7 +20,9 @@ import {
 } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-import { useAddresses } from '../../context/AddressContext';
+import { fetchAddresses } from '../../services/AddressService';
+import { useAuth } from '../../context/AuthContext';
+
 import { RootStackParamList } from '../../navigation/types';
 import { useNotifications } from '../../context/NotificationContext';
 
@@ -45,24 +47,43 @@ const SubscriptionDetailsScreen: React.FC = () => {
 
   const { addNotification } = useNotifications();
 
-  const { getAddressById } = useAddresses();
-
   const [loading, setLoading] = React.useState(true);
   const [subscription, setSubscription] = React.useState<UISubscription | null>(
     null,
   );
   const [showQuantityModal, setShowQuantityModal] = React.useState(false);
 
+  const { userId } = useAuth();
+
+  const [deliveryAddress, setDeliveryAddress] = React.useState<any | null>(
+    null,
+  );
+
   const loadSubscription = React.useCallback(async () => {
     try {
       setLoading(true);
       const data = await fetchSubscriptionById(subscriptionId);
+
       console.log('SUBSCRIPTION DETAILS:', {
         schedule: data.schedule,
         selectedDays: data.selectedDays,
         nextDeliveryDate: data.nextDeliveryDate,
+        addressId: data.addressId,
       });
+
       setSubscription(data);
+
+      if (userId && data.addressId) {
+        const addresses = await fetchAddresses(userId);
+
+        const address = addresses.find(
+          (item: any) => item.id === data.addressId,
+        );
+
+        setDeliveryAddress(address ?? null);
+      } else {
+        setDeliveryAddress(null);
+      }
     } catch (error) {
       console.error('Failed to load subscription', error);
       setSubscription(null);
@@ -83,19 +104,36 @@ const SubscriptionDetailsScreen: React.FC = () => {
 
   React.useEffect(() => {
     const returnedAddressId = route.params?.addressId;
-    if (!returnedAddressId) {
+
+    if (!returnedAddressId || !userId) {
       return;
     }
 
-    setSubscription(current =>
-      current
-        ? {
-            ...current,
-            addressId: returnedAddressId,
-          }
-        : current,
-    );
-  }, [route.params?.addressId]);
+    const loadReturnedAddress = async () => {
+      try {
+        const addresses = await fetchAddresses(userId);
+
+        const address = addresses.find(
+          (item: any) => item.id === returnedAddressId,
+        );
+
+        setDeliveryAddress(address ?? null);
+
+        setSubscription(current =>
+          current
+            ? {
+                ...current,
+                addressId: returnedAddressId,
+              }
+            : current,
+        );
+      } catch (error) {
+        console.error('Failed to load returned address:', error);
+      }
+    };
+
+    loadReturnedAddress();
+  }, [route.params?.addressId, userId]);
 
   if (loading) {
     return (
@@ -475,37 +513,47 @@ const SubscriptionDetailsScreen: React.FC = () => {
             <Text style={styles.deliveryTitle}>Delivery Address</Text>
 
             {subscription.addressId ? (
-              (() => {
-                const addr = getAddressById(subscription.addressId);
-                if (!addr) {
-                  return <Text style={styles.infoValue}>No address found</Text>;
-                }
-
-                return (
-                  <View style={styles.addressCard}>
-                    <View style={styles.badge}>
-                      <Text style={styles.badgeText}>{addr.label}</Text>
-                    </View>
-
-                    <Text style={styles.addressName}>{addr.fullName}</Text>
-
-                    <Text style={styles.addressLine}>{addr.house}</Text>
-                    <Text style={styles.addressLine}>{addr.area}</Text>
-                    {addr.landmark ? (
-                      <Text style={styles.addressLine}>{addr.landmark}</Text>
-                    ) : null}
-
-                    <Text style={styles.addressLine}>
-                      {addr.city} - {addr.pinCode}
+              deliveryAddress ? (
+                <View style={styles.addressCard}>
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>
+                      {deliveryAddress.label}
                     </Text>
-
-                    <View style={styles.phoneRow}>
-                      <Text style={styles.phoneIcon}>📞</Text>
-                      <Text style={styles.phoneText}>{addr.phoneNumber}</Text>
-                    </View>
                   </View>
-                );
-              })()
+
+                  <Text style={styles.addressName}>
+                    {deliveryAddress.full_name}
+                  </Text>
+
+                  <Text style={styles.addressLine}>
+                    {deliveryAddress.address_line}
+                  </Text>
+
+                  <Text style={styles.addressLine}>
+                    {deliveryAddress.city}, {deliveryAddress.state}
+                  </Text>
+
+                  {deliveryAddress.landmark ? (
+                    <Text style={styles.addressLine}>
+                      {deliveryAddress.landmark}
+                    </Text>
+                  ) : null}
+
+                  <Text style={styles.addressLine}>
+                    {deliveryAddress.pincode}
+                  </Text>
+
+                  <View style={styles.phoneRow}>
+                    <Text style={styles.phoneIcon}>📞</Text>
+
+                    <Text style={styles.phoneText}>
+                      {deliveryAddress.phone}
+                    </Text>
+                  </View>
+                </View>
+              ) : (
+                <Text style={styles.infoValue}>Loading address...</Text>
+              )
             ) : (
               <Text style={styles.infoValue}>
                 No delivery address selected.

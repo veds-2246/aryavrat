@@ -14,6 +14,20 @@ export type Address = {
   is_default: boolean;
 };
 
+const mapAddressFromApi = (address: any) => ({
+  id: String(address.id),
+  user_id: address.user_id ?? address.userId,
+  label: address.label ?? 'Home',
+  full_name: address.full_name ?? address.fullName ?? '',
+  phone: address.phone ?? '',
+  address_line: address.address_line ?? address.house ?? '',
+  landmark: address.landmark ?? '',
+  city: address.city ?? '',
+  state: address.state ?? address.area ?? '',
+  pincode: address.pincode ?? '',
+  is_default: address.is_default ?? address.isDefault ?? false,
+});
+
 export async function fetchAddresses(userId: string) {
   const response = await fetch(
     `${API_BASE}/api/v1/addresses?user_id=${userId}`,
@@ -25,20 +39,9 @@ export async function fetchAddresses(userId: string) {
 
   const data = await response.json();
 
-  return data.map((addr: any) => ({
-    id: addr.id,
-    label: addr.label,
-    fullName: addr.full_name,
-    phone: addr.phone,
-    house: addr.address_line,
-    area: addr.city,
-    landmark: addr.landmark ?? '',
-    city: addr.city,
-    state: addr.state,
-    pincode: addr.pincode,
-    isDefault: addr.is_default,
-  }));
+  return Array.isArray(data) ? data.map(mapAddressFromApi) : [];
 }
+
 export async function createAddress(address: Address) {
   const response = await fetch(`${API_BASE}/api/v1/addresses/`, {
     method: 'POST',
@@ -55,10 +58,13 @@ export async function createAddress(address: Address) {
     throw new Error(JSON.stringify(data));
   }
 
-  return data;
+  return mapAddressFromApi(data);
 }
 
 export async function updateAddress(id: string, address: Partial<Address>) {
+  console.log('UPDATE ADDRESS ID:', id);
+  console.log('UPDATE ADDRESS DATA:', address);
+
   const response = await fetch(`${API_BASE}/api/v1/addresses/${id}`, {
     method: 'PUT',
     headers: {
@@ -67,11 +73,16 @@ export async function updateAddress(id: string, address: Partial<Address>) {
     body: JSON.stringify(address),
   });
 
+  const data = await response.json();
+
+  console.log('UPDATE ADDRESS RESPONSE:', data);
+
   if (!response.ok) {
+    console.error('UPDATE ADDRESS ERROR:', data);
     throw new Error('Failed to update address');
   }
 
-  return response.json();
+  return mapAddressFromApi(data);
 }
 
 export async function deleteAddress(id: string) {

@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   SafeAreaView,
   StatusBar,
@@ -12,16 +12,12 @@ import {
   Alert,
 } from 'react-native';
 
-import {
-  useNavigation,
-  useRoute,
-  RouteProp,
-} from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-import {RootStackParamList} from '../../navigation/types';
-import {useAuth} from '../../context/AuthContext';
+import { RootStackParamList } from '../../navigation/types';
+import { useAuth } from '../../context/AuthContext';
 
 import {
   createAddress,
@@ -34,10 +30,7 @@ type NavigationProp = NativeStackNavigationProp<
   'AddEditAddress'
 >;
 
-type AddEditAddressRouteProp = RouteProp<
-  RootStackParamList,
-  'AddEditAddress'
->;
+type AddEditAddressRouteProp = RouteProp<RootStackParamList, 'AddEditAddress'>;
 
 type BackendAddress = {
   id: string;
@@ -57,10 +50,11 @@ const AddEditAddressScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<AddEditAddressRouteProp>();
 
-  const {userId} = useAuth();
+  const { userId } = useAuth();
 
-  const [editingAddress, setEditingAddress] =
-    useState<BackendAddress | null>(null);
+  const [editingAddress, setEditingAddress] = useState<BackendAddress | null>(
+    null,
+  );
 
   const [fullName, setFullName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -69,29 +63,20 @@ const AddEditAddressScreen = () => {
   const [landmark, setLandmark] = useState('');
   const [city, setCity] = useState('');
   const [pinCode, setPinCode] = useState('');
-  const [label, setLabel] =
-    useState<'Home' | 'Work' | 'Other'>(
-      'Home',
-    );
-  const [isDefault, setIsDefault] =
-    useState(false);
+  const [label, setLabel] = useState<'Home' | 'Work' | 'Other'>('Home');
+  const [isDefault, setIsDefault] = useState(false);
 
   useEffect(() => {
     const loadAddress = async () => {
-      if (
-        !route.params?.addressId ||
-        !userId
-      ) {
+      if (!route.params?.addressId || !userId) {
         return;
       }
 
       try {
-        const addresses =
-          await fetchAddresses(userId);
+        const addresses = await fetchAddresses(userId);
 
         const address = addresses.find(
-          (a: BackendAddress) =>
-            a.id === route.params?.addressId,
+          (a: BackendAddress) => a.id === route.params?.addressId,
         );
 
         if (!address) {
@@ -106,18 +91,10 @@ const AddEditAddressScreen = () => {
         setLandmark(address.landmark ?? '');
         setCity(address.city);
         setPinCode(address.pincode);
-        setLabel(
-          (address.label as
-            | 'Home'
-            | 'Work'
-            | 'Other') ?? 'Home',
-        );
+        setLabel((address.label as 'Home' | 'Work' | 'Other') ?? 'Home');
         setIsDefault(address.is_default);
       } catch (error) {
-        console.error(
-          'Failed to load address',
-          error,
-        );
+        console.error('Failed to load address', error);
       }
     };
 
@@ -126,33 +103,24 @@ const AddEditAddressScreen = () => {
 
   const validateForm = () => {
     if (
-      !fullName.trim() ||
-      !phoneNumber.trim() ||
-      !house.trim() ||
-      !area.trim() ||
-      !city.trim() ||
-      !pinCode.trim()
+      !(fullName ?? '').trim() ||
+      !(phoneNumber ?? '').trim() ||
+      !(house ?? '').trim() ||
+      !(area ?? '').trim() ||
+      !(city ?? '').trim() ||
+      !(pinCode ?? '').trim()
     ) {
-      Alert.alert(
-        'Missing Information',
-        'Please fill all required fields.',
-      );
+      Alert.alert('Missing Information', 'Please fill all required fields.');
       return false;
     }
 
-    if (phoneNumber.length < 10) {
-      Alert.alert(
-        'Invalid Phone',
-        'Enter a valid phone number.',
-      );
+    if ((phoneNumber ?? '').trim().length < 10) {
+      Alert.alert('Invalid Phone', 'Enter a valid phone number.');
       return false;
     }
 
-    if (pinCode.length !== 6) {
-      Alert.alert(
-        'Invalid PIN Code',
-        'PIN Code must be 6 digits.',
-      );
+    if ((pinCode ?? '').trim().length !== 6) {
+      Alert.alert('Invalid PIN Code', 'PIN Code must be 6 digits.');
       return false;
     }
 
@@ -165,101 +133,72 @@ const AddEditAddressScreen = () => {
     }
 
     if (!userId) {
-      Alert.alert(
-        'Error',
-        'Please login again.',
-      );
+      Alert.alert('Error', 'Please login again.');
       return;
     }
 
     const address = {
       user_id: userId,
       label,
-      full_name: fullName.trim(),
-      phone: phoneNumber.trim(),
-      address_line: house.trim(),
-      landmark: landmark.trim(),
-      city: city.trim(),
-      state: area.trim(),
-      pincode: pinCode.trim(),
+      full_name: (fullName ?? '').trim(),
+      phone: (phoneNumber ?? '').trim(),
+      address_line: (house ?? '').trim(),
+      landmark: (landmark ?? '').trim(),
+      city: (city ?? '').trim(),
+      state: (area ?? '').trim(),
+      pincode: (pinCode ?? '').trim(),
       is_default: isDefault,
     };
 
     try {
       if (editingAddress) {
-        await updateAddress(
-          editingAddress.id,
-          address,
-        );
+        await updateAddress(editingAddress.id, address);
       } else {
         await createAddress(address);
       }
 
       navigation.goBack();
     } catch (error) {
-      console.error(
-        'Failed to save address',
-        error,
-      );
+      console.error('Failed to save address', error);
 
-      Alert.alert(
-        'Error',
-        'Failed to save address.',
-      );
+      Alert.alert('Error', 'Failed to save address.');
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar
-        barStyle="dark-content"
-        backgroundColor="#F8FBF9"
-      />
+      <StatusBar barStyle="dark-content" backgroundColor="#F8FBF9" />
 
-      <ScrollView
-        contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>
-          {editingAddress
-            ? 'Edit Address'
-            : 'Add New Address'}
+          {editingAddress ? 'Edit Address' : 'Add New Address'}
         </Text>
 
-        <Text style={styles.section}>
-          Address Label
-        </Text>
+        <Text style={styles.section}>Address Label</Text>
 
         <View style={styles.labelRow}>
-          {(['Home', 'Work', 'Other'] as const).map(
-            option => (
-              <Pressable
-                key={option}
+          {(['Home', 'Work', 'Other'] as const).map(option => (
+            <Pressable
+              key={option}
+              style={
+                label === option
+                  ? [styles.labelChip, styles.labelChipActive]
+                  : styles.labelChip
+              }
+              onPress={() => setLabel(option)}
+            >
+              <Text
                 style={
-                  label === option
-                    ? [
-                        styles.labelChip,
-                        styles.labelChipActive,
-                      ]
-                    : styles.labelChip
+                  label === option ? styles.labelTextActive : styles.labelText
                 }
-                onPress={() =>
-                  setLabel(option)
-                }>
-                <Text
-                  style={
-                    label === option
-                      ? styles.labelTextActive
-                      : styles.labelText
-                  }>
-                  {option}
-                </Text>
-              </Pressable>
-            ),
-          )}
+              >
+                {option}
+              </Text>
+            </Pressable>
+          ))}
         </View>
 
-        <Text style={styles.section}>
-          Contact Details
-        </Text>
+        <Text style={styles.section}>Contact Details</Text>
 
         <TextInput
           style={styles.input}
@@ -276,9 +215,7 @@ const AddEditAddressScreen = () => {
           onChangeText={setPhoneNumber}
         />
 
-        <Text style={styles.section}>
-          Address
-        </Text>
+        <Text style={styles.section}>Address</Text>
 
         <TextInput
           style={styles.input}
@@ -317,9 +254,7 @@ const AddEditAddressScreen = () => {
         />
 
         <View style={styles.defaultRow}>
-          <Text style={styles.defaultLabel}>
-            Set as default address
-          </Text>
+          <Text style={styles.defaultLabel}>Set as default address</Text>
 
           <Switch
             value={isDefault}
@@ -328,21 +263,13 @@ const AddEditAddressScreen = () => {
               false: '#D8DEDA',
               true: '#8BD3A8',
             }}
-            thumbColor={
-              isDefault
-                ? '#16794B'
-                : '#FFFFFF'
-            }
+            thumbColor={isDefault ? '#16794B' : '#FFFFFF'}
           />
         </View>
 
-        <Pressable
-          style={styles.saveButton}
-          onPress={handleSave}>
+        <Pressable style={styles.saveButton} onPress={handleSave}>
           <Text style={styles.saveText}>
-            {editingAddress
-              ? 'Save Changes'
-              : 'Save Address'}
+            {editingAddress ? 'Save Changes' : 'Save Address'}
           </Text>
         </Pressable>
       </ScrollView>

@@ -232,3 +232,25 @@ export async function updateSubscriptionAddress(
   const data = await response.json();
   return mapSubscriptionFromApi(data);
 }
+
+export async function skipNextDelivery(
+  subscriptionId: string,
+): Promise<UISubscription> {
+  const response = await fetch(
+    `${API_BASE}/subscriptions/${subscriptionId}/skip`,
+    {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to skip next delivery');
+  }
+
+  const data = await response.json();
+
+  return mapSubscriptionFromApi(data);
+}

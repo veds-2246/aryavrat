@@ -30,6 +30,7 @@ import {
   resumeSubscription,
   cancelSubscription,
   updateSubscriptionQuantity,
+  skipNextDelivery,
   UISubscription,
 } from '../../services/SubscriptionService';
 
@@ -283,24 +284,25 @@ const SubscriptionDetailsScreen: React.FC = () => {
       },
       {
         text: 'Skip',
-        onPress: () => {
-          setSubscription(current =>
-            current
-              ? {
-                  ...current,
-                  nextDeliverySkipped: true,
-                }
-              : current,
-          );
+        onPress: async () => {
+          try {
+            const updated = await skipNextDelivery(subscription.id);
 
-          addNotification({
-            id: Date.now().toString(),
-            title: '⏭ Tomorrow Delivery Skipped',
-            message: `${subscription.productName} delivery has been skipped for tomorrow.`,
-            type: 'subscription',
-            createdAt: new Date().toLocaleString(),
-            isRead: false,
-          });
+            setSubscription(updated);
+
+            addNotification({
+              id: Date.now().toString(),
+              title: '⏭ Delivery Skipped',
+              message: `${subscription.productName} next delivery has been skipped.`,
+              type: 'subscription',
+              createdAt: new Date().toLocaleString(),
+              isRead: false,
+            });
+          } catch (error) {
+            console.error('Failed to skip delivery:', error);
+
+            Alert.alert('Error', 'Failed to skip delivery. Please try again.');
+          }
         },
       },
     ]);

@@ -20,6 +20,7 @@ class SubscriptionUpdate(BaseModel):
     schedule: Optional[str] = None
     selected_days: Optional[List[str]] = None
     status: Optional[str] = None
+    address_id: Optional[str] = None
 
 class SubscriptionResponse(SubscriptionCreate):
     id: str
